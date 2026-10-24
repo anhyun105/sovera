@@ -1,0 +1,9 @@
+# Never commit secrets, tokens or local environment files
+.env
+.env.*
+!.env.example
+supabase/functions/.env
+supabase/.temp/
+.DS_Store
+node_modules/
+dist/
