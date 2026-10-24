@@ -113,6 +113,29 @@ drop trigger if exists designs_set_updated_at on public.designs;
 create trigger designs_set_updated_at before update on public.designs
 for each row execute function public.set_updated_at();
 
+-- Turning a design private removes its shareable preview in the same transaction.
+-- This avoids leaving stale public previews accessible after unpublishing.
+create or replace function public.remove_preview_for_private_design()
+returns trigger
+language plpgsql
+set search_path = ''
+as $
+begin
+  if new.visibility <> 'public' then
+    delete from public.public_designs
+    where id = new.id and user_id = new.user_id;
+  end if;
+  return new;
+end;
+$;
+
+drop trigger if exists designs_remove_preview_when_private on public.designs;
+create trigger designs_remove_preview_when_private
+after update of visibility on public.designs
+for each row
+when (new.visibility <> 'public')
+execute function public.remove_preview_for_private_design();
+
 alter table public.profiles enable row level security;
 alter table public.designs enable row level security;
 alter table public.public_designs enable row level security;
