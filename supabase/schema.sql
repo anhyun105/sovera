@@ -489,8 +489,8 @@ for delete to authenticated using ((select auth.uid()) = user_id);
 
 -- Private source files and original photos live only in this non-public bucket.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('design-assets', 'design-assets', false, 15728640, array['image/jpeg','image/png','image/webp','application/octet-stream'])
-on conflict (id) do update set public = false, file_size_limit = 15728640;
+values ('design-assets', 'design-assets', false, 15728640, array['image/jpeg','image/png','image/webp'])
+on conflict (id) do update set public = false, file_size_limit = 15728640, allowed_mime_types = array['image/jpeg','image/png','image/webp'];
 
 drop policy if exists "Owner reads own design assets" on storage.objects;
 create policy "Owner reads own design assets" on storage.objects
