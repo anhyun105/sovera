@@ -105,12 +105,14 @@ $('#authForm').addEventListener('submit',e=>{
  if(authMode==='signup'){
   if(!name){showToast('Add your name to create a preview profile.');return}
   if(users[email]){showToast('This preview profile already exists in this tab session. Sign in instead.');return}
-  users[email]={name};
+  users[email]={name,id:(window.crypto?.randomUUID?.()||('preview-'+Date.now()+'-'+Math.random().toString(16).slice(2)))};
   sessionStorage.setItem('sovera-preview-users',JSON.stringify(users));
  }else{
   if(!users[email]){showToast('No preview profile for this email in this tab session. Create a preview profile first.');return}
  }
- previewUser={name:users[email].name,email};
+ if(!users[email].id)users[email].id=(window.crypto?.randomUUID?.()||('preview-'+Date.now()+'-'+Math.random().toString(16).slice(2)));
+ sessionStorage.setItem('sovera-preview-users',JSON.stringify(users));
+ previewUser={name:users[email].name,email,id:users[email].id};
  sessionStorage.setItem('sovera-preview-session',JSON.stringify(previewUser));
  closeModals();applyUser();renderDashboard();
  showToast('Preview profile ready. This is not a verified account.');
@@ -140,7 +142,7 @@ function renderDashboard(){
  section.hidden=false;
  $('#dashboardHeading').innerHTML='Welcome back,<br><span class="gold">'+escHTML(previewUser.name||'creator')+'.</span>';
  $('#dashboardSubhead').textContent='Your personal design overview. Preview data is stored in this browser only.';
- const owned=getDesigns().filter(d=>d.owner===(previewUser.name||'Preview creator'));
+ const owned=getDesigns().filter(d=>d.ownerId===previewUser.id);
  $('#dashTotal').textContent=owned.length;
  $('#dashPrivate').textContent=owned.filter(d=>d.visibility==='private').length;
  $('#dashPublic').textContent=owned.filter(d=>d.visibility==='public').length;
@@ -190,7 +192,7 @@ function setView(view){activeView=view;$$('.view-tab').forEach(b=>b.classList.to
 $('#rotateBtn').addEventListener('click',()=>{spinning=!spinning;$('#rotateBtn').textContent=spinning?'Ⅱ Pause':'⟳ Rotate';showToast(spinning?'Motion preview enabled.':'Rotation paused.')});
 $('#motionStart').addEventListener('click',()=>{setView('4d');spinning=true;$('#rotateBtn').textContent='Ⅱ Pause'});
 $('#resetBtn').addEventListener('click',()=>{rotX=-.05;rotY=.15;zoom=1;camera.position.set(0,1.35,6.6);modelRoot.rotation.set(rotX,rotY,0);showToast('Studio view reset.')});
-function currentDesign(){return {id:'SV-'+Date.now(),name:kindNames[garmentKind]+' — '+(colorNames[garmentColor]||'Custom'),kind:garmentKind,color:garmentColor,material:garmentMaterial,neckline:$('#neckline').value,sleeves:$('#sleeves').value,bust:$('#bust').value,waist:$('#waist').value,length:$('#length').value,visibility:'private',createdAt:new Date().toISOString(),owner:previewUser?.name||'Preview creator'}}
+function currentDesign(){return {id:'SV-'+Date.now(),name:kindNames[garmentKind]+' — '+(colorNames[garmentColor]||'Custom'),kind:garmentKind,color:garmentColor,material:garmentMaterial,neckline:$('#neckline').value,sleeves:$('#sleeves').value,bust:$('#bust').value,waist:$('#waist').value,length:$('#length').value,visibility:'private',createdAt:new Date().toISOString(),ownerId:previewUser?.id||null,owner:previewUser?.name||'Preview creator'}}
 function getDesigns(){try{return JSON.parse(localStorage.getItem('sovera-preview-designs')||'[]')}catch(_){return []}}
 function saveDesign(visibility){if(!requireCreator())return;const design=currentDesign();design.visibility=visibility;const all=getDesigns().filter(d=>d.id!==design.id);all.unshift(design);localStorage.setItem('sovera-preview-designs',JSON.stringify(all.slice(0,40)));$('#privacyPill').textContent=visibility==='public'?'◎ Public preview':'◉ Private preview';if(visibility==='public')renderUserDesign(design);showToast(visibility==='public'?'Concept marked public in this browser preview.':'Concept saved privately on this browser.')}
 $('#saveDesign').addEventListener('click',()=>saveDesign('private'));
