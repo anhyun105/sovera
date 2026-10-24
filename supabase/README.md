@@ -11,7 +11,7 @@ The GitHub Pages website is live. The cloud integration code in this folder is p
 - **Private files:** originals, personal photos and source assets use the private `design-assets` bucket.
 - **Published images:** watermarked concept images use `public-design-previews`, also private. The gallery returns a signed URL only for a currently published row.
 - **Community actions:** atomic like/unlike RPC, comments initially marked pending, content reports and moderation actions.
-- **Admin-only operations:** analytics, moderation queue, role checks and activity events run through Edge Functions with a server secret.
+- **Admin-only operations:** analytics, searchable account records, per-user activity history, 7-day suspension/un-suspension, moderation queues, role checks and activity events run through Edge Functions with a server secret.
 - **AI photo preview:** consent-gated function that accepts a private temporary photo, calls the OpenAI image-edit endpoint, records a rate-limited request and deletes the temporary original after processing.
 - **Account deletion:** authenticated self-service function removes source assets and published-preview files before deleting the Supabase Auth user and cascaded database rows.
 
@@ -88,11 +88,12 @@ supabase functions deploy track-activity
 supabase functions deploy report-content
 supabase functions deploy moderate-content
 supabase functions deploy admin-dashboard
+supabase functions deploy admin-users
 supabase functions deploy delete-my-account
 supabase functions deploy virtual-try-on
 ```
 
-The function configuration is in `config.toml`. Only `public-gallery` accepts unauthenticated requests because it exposes the public community feed, not private design data. All other functions require a valid signed-in session. Edge Function secrets must remain in Supabase server settings.
+The function configuration is in `config.toml`. Only `public-gallery` accepts unauthenticated requests because it exposes the public community feed, not private design data. All other functions require a valid signed-in session. The `admin-users` function is owner/admin-only and uses the Auth Admin API on the server to show registered users, verification/sign-in status, saved-design/comment/like counts, per-user event history and account suspension controls. Its aggregate RPC is granted only to `service_role`. Edge Function secrets must remain in Supabase server settings.
 
 ## 5. Connect the browser safely
 
