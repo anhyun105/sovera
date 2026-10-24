@@ -593,9 +593,9 @@ function addGarmentSleeves(kind,mat){
  const type=$('#sleeves').value;
  const topY=kind==='blouse'?1.43:(kind==='jacket'?1.62:1.75);
  for(const side of [-1,1]){
-  const shoulder=new THREE.Vector3(side*(kind==='blouse'?.36:.37),topY,0);
-  const elbow=new THREE.Vector3(side*(type==='Off-shoulder'?.58:.55),type==='Off-shoulder'?topY-.26:1.18,0);
-  const wrist=new THREE.Vector3(side*(type==='Bell'?.70:.64),type==='Off-shoulder'?topY-.45:(type==='Long'?0.58:.74),0);
+  const shoulder=new THREE.Vector3(side*(kind==='blouse'?.40:.43),topY,0.04);
+  const elbow=new THREE.Vector3(side*(type==='Off-shoulder'?.62:.70),type==='Off-shoulder'?topY-.26:1.18,0.04);
+  const wrist=new THREE.Vector3(side*(type==='Bell'?.84:.82),type==='Off-shoulder'?topY-.45:(type==='Long'?0.58:.74),0.04);
   if(type==='Off-shoulder'){
    cylinderBetween(shoulder,elbow,.13,.11,mat,24);
   }else if(type==='Bell'){
@@ -629,6 +629,7 @@ if(kind==='trousers'){lathe([[0,.22],[.35,.22],[.43,.36],[.38,.85],[.34,1.12],[.
 }else if(kind==='jacket'){lathe([[0,.48],[.3,.48],[.38,.55],[.36,.85],[.4,1.12],[.35,1.42],[.42,1.7],[.34,1.94],[.2,2.1],[0,2.1]],mat);for(const x of [-1,1]){cylinderBetween(new THREE.Vector3(x*.32,1.82,0),new THREE.Vector3(x*.65,1.04,0),.13,.1,mat);cylinderBetween(new THREE.Vector3(x*.65,1.04,0),new THREE.Vector3(x*.72,.58,0),.1,.09,mat)}lathe([[0,1.8],[.09,1.8],[.16,1.94],[.2,2.1],[0,2.1]],gold);addTrim(.39,.7,.018,gold);
 }else if(kind==='blouse'){lathe([[0,.75],[.34,.75],[.42,.91],[.39,1.14],[.43,1.42],[.32,1.67],[.23,1.82],[0,1.82]],mat);for(const x of [-1,1])cylinderBetween(new THREE.Vector3(x*.38,1.44,0),new THREE.Vector3(x*.62,1.05,0),.13,.095,mat);addTrim(.41,.9,.022,gold);
 }else if(kind==='skirt'){lathe([[0,.18],[.95,.18],[1.03,.25],[.81,.62],[.61,1.0],[.47,1.36],[.43,1.48],[0,1.48]],mat);lathe([[0,1.35],[.45,1.35],[.46,1.52],[.35,1.68],[.22,1.74],[0,1.74]],dark);addTrim(.46,1.48,.025,gold);addTrim(.96,.2,.018,gold);
+}else if(kind==='lehenga'){lathe([[0,.12],[.42,.12],[.48,.25],[.82,.65],[1.0,1.05],[.9,1.28],[0,1.28]],mat,96);lathe([[0,1.23],[.42,1.23],[.43,1.39],[.34,1.56],[.25,1.73],[.14,1.84],[0,1.84]],mat,80);addTrim(.44,1.25,.024,gold);addTrim(.94,.18,.02,gold);
 }else{let profile;if(kind==='saree')profile=[[0,.08],[1.08,.08],[1.04,.19],[.8,.53],[.61,.88],[.49,1.1],[.43,1.43],[.56,1.67],[.44,1.91],[.14,2.07],[0,2.07]];else profile=[[0,.08],[.98,.08],[1.06,.15],[.9,.39],[.78,.68],[.61,.99],[.5,1.32],[.44,1.53],[.49,1.68],[.59,1.87],[.47,2.08],[.15,2.19],[0,2.19]];lathe(profile,mat,96);addTrim(.49,1.53,.025,gold);addTrim(.52,1.68,.018,gold);addTrim(kind==='saree'?1.0:.99,.1,.02,gold);
 if(kind==='saree'){const scarf=new THREE.Mesh(new THREE.PlaneGeometry(.45,1.8,1,12),new THREE.MeshPhysicalMaterial({color:garmentColor,side:THREE.DoubleSide,roughness:.28,metalness:.18,transparent:true,opacity:.86}));scarf.position.set(.34,1.23,.36);scarf.rotation.z=-.28;modelRoot.add(scarf);}}
 if(kind!=='trousers'&&kind!=='skirt'){addMesh(new THREE.SphereGeometry(.12,20,16),new THREE.MeshStandardMaterial({color:0x9d7253,roughness:.86}),0,2.31,0);addMesh(new THREE.CylinderGeometry(.08,.09,.15,20),dark,0,2.18,0)}
