@@ -48,8 +48,8 @@ if source.count('data-material="') < 12:
     raise SystemExit("ERROR: expected at least 12 selectable material options")
 if 'id="embroidery"' not in source:
     raise SystemExit("ERROR: garment embellishment control is missing")
-if 'type="password"' in source or "type='password'" in source:
-    raise SystemExit("ERROR: a prototype-only site must not collect passwords")
+if re.search(r"<input\\b[^>]*\\btype\\s*=\\s*['\\\"]password", source, re.I):
+    raise SystemExit("ERROR: a password field must never be embedded as static HTML; the optional real-auth field is created only after Supabase is configured")
 
 match = re.search(r'<script\s+type=["\']module["\']\s*>(.*?)</script\s*>', source, re.I | re.S)
 if not match:
