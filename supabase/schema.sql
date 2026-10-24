@@ -101,7 +101,7 @@ create table if not exists public.activity_events (
   user_id uuid references auth.users(id) on delete set null,
   event_type text not null check (event_type in (
     'sign_in','sign_out','design_created','design_updated','design_published',
-    'design_made_private','design_deleted','comment_reported','user_reported','design_reported','comment_moderated'
+    'design_made_private','design_deleted','comment_reported','comment_submitted','user_reported','design_reported','comment_moderated'
   )),
   design_id uuid,
   metadata jsonb not null default '{}'::jsonb,
