@@ -107,7 +107,7 @@
   </div>
   <section id="adminPanel" class="admin-panel" hidden aria-label="Administrator dashboard">
    <div class="admin-head"><div><div class="eyebrow">Restricted tools</div><h3>Administrator overview</h3></div><button class="btn" id="adminRefresh">Refresh activity ↻</button></div>
-   <p class="section-footnote">Only an account assigned the admin role in Supabase can load this panel. Events contain limited operational metadata, not photos or full design payloads.</p>
+   <p class="section-footnote">Owner-only access: the signed-in account UUID must match SOVERA_OWNER_USER_ID stored in Supabase server secrets AND have the admin role in the database. Other website users are denied. Records exclude passwords, session tokens, original photos and raw design measurements.</p>
    <div class="admin-metrics">
     <div class="admin-metric"><strong id="adminAccounts">0</strong><span>Creator profiles</span></div>
     <div class="admin-metric"><strong id="adminDesigns">0</strong><span>Saved designs</span></div>
