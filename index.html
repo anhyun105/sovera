@@ -81,7 +81,7 @@
 <div class="wrap"><section class="cta-band"><div><div class="eyebrow">Your world is waiting</div><h2>Make room for<br><span class="gold">your imagination.</span></h2><p>Begin with a colour, a silhouette or a thought you cannot let go of. The first sketch is always an invitation.</p></div><button class="btn btn-gold" id="ctaDesign">Step into Sovera ↗</button></section></div>
 </main>
 <footer class="footer"><div class="wrap"><div class="footer-top"><a class="brand" href="#home"><div class="brand-symbol">SV</div><div><div class="brand-name">SOVERA</div><div class="brand-tag">Value your Soul</div></div></a><div class="footer-links"><a href="#atelier">Atelier</a><a href="#materials">Materials</a><a href="#explore">Explore</a><a href="#philosophy">Our philosophy</a><button class="btn btn-quiet" id="privacyInfo" style="padding:4px">Privacy note</button></div></div><div class="footer-bottom"><span>© 2026 Sovera. Value your Soul.</span><span>A creative prototype · Not a production garment engineering tool.</span></div></div></footer>
-<div class="modal-backdrop" id="authModal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle"><button class="modal-close" data-close aria-label="Close">×</button><div class="brand"><div class="brand-symbol">SV</div><div><div class="brand-name">SOVERA</div><div class="brand-tag">Value your Soul</div></div></div><div class="eyebrow" style="margin-top:28px" id="authEyebrow">Your private atelier awaits</div><h2 id="authTitle">Begin your<br><span class="gold">own chapter.</span></h2><p id="authIntro">Create a local preview profile to explore the studio controls.</p><p class="demo-warning">Preview mode: this form does not verify email or create a real account. Do not enter a password. Real authentication and secure cloud data need a configured backend.</p><form id="authForm"><label for="authName" id="authNameLabel">Your name</label><input id="authName" name="name" autocomplete="name" placeholder="How should we call you?"><label for="authEmail">Email address</label><input id="authEmail" type="email" name="email" required autocomplete="email" placeholder="you@example.com"><p class="demo-warning">No password is needed here. This temporary profile is only for exploring the demo and is not a real Sovera account.</p><button class="btn btn-gold" id="authSubmit" type="submit">Continue into Sovera ↗</button></form><button class="form-switch" id="switchAuth">Already have a preview profile? Sign in</button></section></div>
+<div class="modal-backdrop" id="authModal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle"><button class="modal-close" data-close aria-label="Close">×</button><div class="brand"><div class="brand-symbol">SV</div><div><div class="brand-name">SOVERA</div><div class="brand-tag">Value your Soul</div></div></div><div class="eyebrow" style="margin-top:28px" id="authEyebrow">Your private atelier awaits</div><h2 id="authTitle">Begin your<br><span class="gold">own chapter.</span></h2><p id="authIntro">Create a local preview profile to explore the studio controls.</p><p class="demo-warning">Preview mode: this form does not verify email or create a real account. Do not enter a password. Real authentication and secure cloud data need a configured backend.</p><form id="authForm"><label for="authName" id="authNameLabel">Your name</label><input id="authName" name="name" autocomplete="name" placeholder="How should we call you?"><label for="authEmail">Email address</label><input id="authEmail" type="email" name="email" required autocomplete="email" placeholder="you@example.com"><div id="cloudPasswordWrap" hidden></div><p class="demo-warning" id="authInfo">No password is needed here. This temporary profile is only for exploring the demo and is not a real Sovera account.</p><button class="btn btn-gold" id="authSubmit" type="submit">Continue into Sovera ↗</button></form><button class="form-switch" id="switchAuth">Already have a preview profile? Sign in</button></section></div>
 <div class="modal-backdrop" id="photoModal"><section class="modal"><button class="modal-close" data-close aria-label="Close">×</button><div class="eyebrow">Local photo preview</div><h2>Your look,<br><span class="gold">your perspective.</span></h2><p>Your selected photo is used only in this browser session for this prototype. It is not uploaded to a server.</p><div id="photoPreview" style="max-height:360px;overflow:hidden;position:relative;background:#090807;text-align:center"></div><button class="btn btn-gold" id="closePhoto">Close preview</button></section></div>
 <div class="modal-backdrop" id="commentModal"><section class="modal"><button class="modal-close" data-close aria-label="Close">×</button><div class="eyebrow">Community preview</div><h2 id="commentTitle">A concept worth discussing.</h2><p>Community comments are a visual prototype. Sign-in, moderation and shared cloud storage need to be configured before real public discussions.</p><label for="commentDraft">Your thoughts</label><textarea id="commentDraft" rows="3" placeholder="Share a kind, constructive thought..."></textarea><button class="btn btn-gold" id="commentSend">Preview comment ↗</button></section></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -103,12 +103,58 @@ function closeModals(){$$$('.modal-backdrop').forEach(m=>m.classList.remove('ope
 $$$('[data-close]').forEach(b=>b.addEventListener('click',closeModals));
 $$$('.modal-backdrop').forEach(m=>m.addEventListener('mousedown',e=>{if(e.target===m)closeModals()}));
 function requireCreator(){if(!previewUser){openAuth('signup');showToast('Sign in to unlock your personal atelier.');return false}return true}
-function openAuth(mode){authMode=mode;$('#authTitle').innerHTML=mode==='signup'?'Begin your<br><span class="gold">own chapter.</span>':'Welcome<br><span class="gold">back to your atelier.</span>';$('#authIntro').textContent=mode==='signup'?'Create a local preview profile to explore the studio controls.':'Sign in to your preview profile stored on this browser.';$('#authEyebrow').textContent=mode==='signup'?'Your private atelier awaits':'Return to your creative space';$('#authNameLabel').style.display=mode==='signup'?'block':'none';$('#authName').style.display=mode==='signup'?'block':'none';$('#authName').required=mode==='signup';$('#authSubmit').textContent=mode==='signup'?'Create preview profile ↗':'Enter preview atelier ↗';$('#switchAuth').textContent=mode==='signup'?'Already have a preview profile? Sign in':'New to Sovera? Create a preview profile';openModal('authModal')}
+function ensureCloudPasswordField(){
+ const wrap=$('#cloudPasswordWrap');if(!wrap)return;
+ if(!$('#cloudPassword')){
+  const label=document.createElement('label');label.htmlFor='cloudPassword';label.id='cloudPasswordLabel';label.textContent='Password';
+  const input=document.createElement('input');input.id='cloudPassword';input.name='cloudPassword';input.autocomplete='current-password';input.required=true;input.minLength=8;input.type='password';input.placeholder='At least 8 characters';input.style.display='block';input.style.width='100%';input.style.background='#18140f';input.style.border='1px solid #403221';input.style.padding='12px';input.style.color='#f8eedc';
+  wrap.append(label,input);
+ }
+}
+function openAuth(mode){
+ authMode=mode;
+ $('#authTitle').innerHTML=mode==='signup'?'Begin your<br><span class="gold">own chapter.</span>':'Welcome<br><span class="gold">back to your atelier.</span>';
+ $('#authEyebrow').textContent=mode==='signup'?'Your private atelier awaits':'Return to your creative space';
+ $('#authNameLabel').style.display=mode==='signup'?'block':'none';
+ $('#authName').style.display=mode==='signup'?'block':'none';
+ $('#authName').required=mode==='signup';
+ $('#authSubmit').textContent=mode==='signup'?'Create account ↗':'Sign in securely ↗';
+ $('#switchAuth').textContent=mode==='signup'?'Already have an account? Sign in':'New to Sovera? Create an account';
+ const info=$('#authInfo'),wrap=$('#cloudPasswordWrap');
+ if(supabase){
+  ensureCloudPasswordField();wrap.hidden=false;$('#cloudPassword').value='';
+  $('#authIntro').textContent=mode==='signup'?'Create your Sovera account. Email verification depends on your Supabase project settings.':'Sign in with your verified Sovera account.';
+  info.textContent='Live backend configured. Use a unique password. Your account is handled by Supabase Auth; password is never stored by this website.';
+ }else{
+  wrap.hidden=true;if($('#cloudPassword'))$('#cloudPassword').value='';
+  $('#authIntro').textContent=mode==='signup'?'Create a tab-local preview profile to explore the studio controls.':'Sign in to a preview profile created in this same tab.';
+  info.textContent='Preview mode: no real account, email verification, or cloud sync is active. Do not enter a password.';
+ }
+ openModal('authModal');
+}
 $('#switchAuth').addEventListener('click',()=>openAuth(authMode==='signup'?'signin':'signup'));
-$('#authForm').addEventListener('submit',e=>{
+$('#authForm').addEventListener('submit',async e=>{
  e.preventDefault();
  const email=$('#authEmail').value.trim().toLowerCase();
  const name=$('#authName').value.trim();
+ if(supabase){
+  const password=$('#cloudPassword')?.value||'';
+  if(password.length<8){showToast('Use a password with at least 8 characters.');return}
+  try{
+   if(authMode==='signup'){
+    if(!name){showToast('Add your display name first.');return}
+    const {data,error}=await supabase.auth.signUp({email,password,options:{data:{display_name:name},emailRedirectTo:'https://anhyun105.github.io/sovera/' }});
+    if(error)throw error;
+    if(data.session){await activateCloudSession(data.session);closeModals();showToast('Sovera account created.');}
+    else{showToast('Account request sent. Check your email to verify it, then sign in.');}
+   }else{
+    const {data,error}=await supabase.auth.signInWithPassword({email,password});
+    if(error)throw error;
+    await activateCloudSession(data.session);closeModals();showToast('Signed in securely.');
+   }
+  }catch(error){console.error('Sovera auth error:',error);showToast(error?.message||'Authentication failed. Check your account and project configuration.')}
+  return;
+ }
  let users={};
  try{users=JSON.parse(sessionStorage.getItem('sovera-preview-users')||'{}')}catch(_){}
  if(authMode==='signup'){
