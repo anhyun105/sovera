@@ -1,30 +1,35 @@
-# Sovera security notes
+# Sovera security and privacy notes
 
-## Current public site status
+## Current hosting vs. active services
 
-The GitHub Pages site is a public frontend prototype. Its preview sign-up is not real authentication. It stores a temporary profile in tab session storage and saved design concepts in that browser's local storage. It does not verify email, upload cloud designs, or share actual community activity across browsers. Do not type a real password or upload confidential work into this prototype.
+The static website is live on GitHub Pages. The repository contains a prepared Supabase schema and Edge Functions for cloud accounts, private design storage, signed public previews, likes/comments, reports, moderation, admin analytics, account deletion and AI try-on. **Those cloud services are not active until the owner creates/configures a Supabase project, applies the schema, sets server secrets and deploys the Edge Functions.** The public configuration file currently contains empty credential placeholders.
 
-## What public and private mean in this prototype
+In preview mode, the signup form creates only a tab-local preview profile. Saved designs are browser-local; the profile is not email-verified and there is no cross-device sync. Do not enter a real password or upload confidential design/photo data to the preview version.
 
-- Guest visitors can browse the public landing page and inspiration gallery.
-- The studio and save controls prompt for a preview profile.
-- New concepts are marked private in this browser until the creator chooses the demo Publish control.
-- Publishing adds a card to the current browser's demo gallery only; it does not create a live public user post.
-- Browser-local storage is not a secure vault. Anyone with access to the same browser profile can potentially inspect it.
+## Privacy model when the backend is configured
 
-## Before accepting real users
+- Full design geometry and measurements live in owner-only `designs`, protected by row-level security (RLS).
+- The public Explore feed is served through `public-gallery`, which returns selected metadata and time-limited signed URLs only for explicitly published watermarked previews.
+- `design-assets` and `public-design-previews` are private Storage buckets. Never change either bucket to public.
+- Comments begin as pending; a trusted moderator must approve them.
+- Reports, admin roles, audit events and AI usage records are server-only. The browser must never access a Supabase secret/service-role key.
+- AI photo editing is available only after explicit consent, uses temporary private upload, validates file type/size and reserves a maximum of five requests per account per hour. Provider terms/safety review/retention can still apply.
+- Self-service account deletion removes user-owned Storage assets before deleting the Auth account and cascaded database records.
+- Public creator/user identifiers are not intentionally returned in the public feed or likes API. Administrative logs contain allowlisted operational metadata only.
 
-1. Replace the demo profile UI with Supabase Auth and verified email flows.
-2. Apply and test `supabase/schema.sql` in a fresh Supabase project, reviewing it against the project's current database version and default grants.
-3. Keep complete design payloads in owner-only `designs`; expose only selected preview metadata in `public_designs`.
-4. Keep source design files and personal photos in a private storage bucket. Serve a watermarked preview only through a server-side handler that verifies publication status.
-5. Put moderation, admin roles, audit analytics, signed preview URLs, rate limits and deletion operations behind trusted Edge Functions or a server. Never put a Supabase secret or service-role key into HTML, JavaScript, a public repository or client storage.
-6. Add automated RLS tests for guest access, owner access, cross-user access, publish/unpublish, comments, likes and storage paths.
-7. Define a privacy notice, user consent, retention schedule, account deletion and reporting/appeal process before launch.
-8. Add abuse protection and moderation for public comments, uploads and account signups.
+## Launch security checklist
 
-## Copying and screenshot limitations
+1. Apply `supabase/schema.sql` to a fresh project and review the grants/policies against current Supabase docs.
+2. Set email confirmation, production SMTP, password-reset redirects, CAPTCHA and Auth rate limits before public signups.
+3. Configure only a public/publishable key in `supabase-config.js`. Keep `SOVERA_SERVICE_ROLE_KEY` and `OPENAI_API_KEY` in Supabase server secrets.
+4. Deploy every function in `supabase/config.toml` and confirm its JWT/CORS rules.
+5. Test with two unrelated accounts and negative tests: guest access, A trying to read/update/delete B's rows/files, unpublish, comment approval, creator report, non-admin access to admin APIs, rate limits, deletion cleanup and failed AI cleanup.
+6. Define a documented retention schedule, backup/restore policy, privacy support contact, legal notice and incident/appeal process.
+7. Set spending controls for image generation and monitor request rates, failures and storage cleanup.
+8. Don't call the service production-ready until those tests pass in the real Supabase project.
 
-No website can reliably stop a viewer from photographing a screen, using external recording hardware, or recreating a visible public design. Watermarks, permission checks, rate limits and limited preview resolution can reduce risk but cannot promise zero copying.
+Run tests and review docs: [Feature status](FEATURE_STATUS.md), [Supabase launch guide](supabase/README.md), [Privacy notice](privacy.html), [Terms draft](terms.html).
 
-Report security concerns privately to the repository owner rather than including secrets or private user data in public issues.
+## Screenshot and copying limits
+
+No browser-only or hosted website can reliably prevent a viewer from taking a screenshot, recording the screen with software/hardware or photographing it with another device. Watermarks, reduced-resolution previews, signed URL expiry, access controls and abuse monitoring reduce risk but do not guarantee zero copying.
