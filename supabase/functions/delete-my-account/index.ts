@@ -58,7 +58,7 @@ async function listAllObjectPaths(
   return files;
 }
 
-async function removePaths(admin: ReturnType<typeof createClient>, bucket: string, paths: string[]) {
+async function removePaths(admin: any, bucket: string, paths: string[]) {
   for (let offset = 0; offset < paths.length; offset += 100) {
     const chunk = paths.slice(offset, offset + 100);
     const { error } = await admin.storage.from(bucket).remove(chunk);
