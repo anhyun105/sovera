@@ -36,6 +36,7 @@ jobs:
           deno check supabase/functions/report-content/index.ts
           deno check supabase/functions/admin-dashboard/index.ts
           deno check supabase/functions/moderate-content/index.ts
+          deno check supabase/functions/delete-my-account/index.ts
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
