@@ -462,13 +462,21 @@ async function makeCloudDesignPrivate(id){
 async function deleteCloudDesign(d){
  if(!supabase||!previewUser?.isCloud||!d)return;
  if(!confirm('Delete this cloud concept? This cannot be undone.'))return;
- const {data:row}=await supabase.from('public_designs').select('preview_image_path').eq('id',d.id).maybeSingle();
+ const {data:row,error:readError}=await supabase.from('public_designs').select('preview_image_path').eq('id',d.id).maybeSingle();
+ if(readError){showToast(readError.message||'Could not check the published preview.');return}
+ // Make private first so the public row disappears. Remove its file while the owner
+ // row still exists; the Storage DELETE policy verifies ownership through designs.
+ const {error:privateError}=await supabase.from('designs').update({visibility:'private'}).eq('id',d.id);
+ if(privateError){showToast(privateError.message||'Could not make design private before deletion.');return}
+ if(row?.preview_image_path){
+  const {error:storageError}=await supabase.storage.from('public-design-previews').remove([row.preview_image_path]);
+  if(storageError){console.error('Preview cleanup failed:',storageError);showToast('Design is private, but its preview file could not be removed. Retry or contact admin.');return}
+ }
  await trackCloudEvent('design_deleted',d.id,{garmentType:d.garment_type});
  const {error}=await supabase.from('designs').delete().eq('id',d.id);
- if(error){showToast(error.message||'Could not delete design.');return}
- if(row?.preview_image_path)await supabase.storage.from('public-design-previews').remove([row.preview_image_path]);
+ if(error){showToast('Design is private, but could not be deleted: '+error.message);return}
  if(currentDesignId===d.id)currentDesignId=null;
- await loadCloudGallery();await renderCloudDashboard();showToast('Cloud concept deleted.');
+ await loadCloudGallery();await renderCloudDashboard();showToast('Cloud concept and its public preview were deleted.');
 }
 async function loadCloudGallery(){
  if(!supabase)return;
