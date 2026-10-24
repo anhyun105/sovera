@@ -24,9 +24,24 @@ The GitHub Pages website is live. The cloud integration code in this folder is p
 
 ## 2. Apply the database schema
 
-Open **SQL Editor** in the new Supabase project, review `schema.sql`, and run it. The schema creates the tables, RLS policies, private Storage buckets, signed-preview access design, like toggling RPC, creator-reporting tables and AI rate-limit reservation.
+**Recommended: use the checked-in migration.** After `supabase login` and `supabase link --project-ref YOUR_PROJECT_REF`, run:
 
-The repository CI parses the SQL syntax, but no parser can replace a real Supabase integration test. After running it, verify in **Database → Tables** that all expected tables exist and RLS is enabled. If you already applied an older draft of this schema, take a backup and review the changes before re-running. The repository includes a pgTAP test file at `supabase/tests/sovera_security.test.sql`; after setting up the local Supabase CLI environment, run `supabase test db` and fix any failing assertions.
+```bash
+supabase db push
+```
+
+This applies `supabase/migrations/20261025000000_sovera_initial_schema.sql`. The repository keeps `schema.sql` as a readable SQL Editor copy, and CI verifies that both files stay byte-for-byte synchronized. If you prefer the Dashboard, review and run `schema.sql` in **SQL Editor** instead; do not maintain two different schema versions.
+
+The schema creates tables, RLS policies, private Storage buckets, signed-preview access design, like toggle RPC, creator-reporting tables and AI rate-limit reservation. After applying it, verify in **Database → Tables** that all expected tables exist and RLS is enabled. If you previously applied an older draft, take a backup and review the changes first.
+
+The repository contains pgTAP checks in `supabase/tests/sovera_security.test.sql`. To run them locally, install Docker and the Supabase CLI, then run:
+
+```bash
+supabase start
+supabase test db
+```
+
+The tests check baseline grants/RLS/private storage and server-only functions. They do not replace two-account end-to-end tests against the configured project.
 
 ## 3. Configure Auth and email delivery
 
