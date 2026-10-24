@@ -418,7 +418,7 @@ async function saveCloudDesign(visibility,design){
  let uploadedPath=null;
  try{
   const blob=await makeWatermarkedPreviewBlob();
-  uploadedPath=previewUser.id+'/'+id+'-'+Date.now()+'.png';
+  uploadedPath=id+'/'+crypto.randomUUID()+'.png';
   const {error:uploadError}=await supabase.storage.from('public-design-previews').upload(uploadedPath,blob,{contentType:'image/png',cacheControl:'3600',upsert:false});
   if(uploadError)throw uploadError;
   const publicRow={id,title:record.title,caption:'',garment_type:design.kind,display_color:design.color,preview_image_path:uploadedPath,published_at:new Date().toISOString()};
@@ -469,14 +469,14 @@ async function deleteCloudDesign(d){
 }
 async function loadCloudGallery(){
  if(!supabase)return;
- const {data,error}=await supabase.from('public_designs').select('id,title,caption,garment_type,display_color,preview_image_path,like_count,published_at,creator_name').order('published_at',{ascending:false}).limit(30);
- if(error){console.warn('Could not load public designs:',error.message);return}
- const gallery=$('#gallery');$('.design-card[data-cloud-id]',gallery).forEach(card=>card.remove());
- for(const row of (data||[]).slice().reverse()){
+ const {data,error}=await supabase.functions.invoke('public-gallery',{body:{limit:30}});
+ if(error){console.warn('Could not load public gallery:',error.message);return}
+ const gallery=$('#gallery');$$('.design-card[data-cloud-id]',gallery).forEach(card=>card.remove());
+ for(const row of (data?.designs||[]).slice().reverse()){
   const card=document.createElement('article');card.className='design-card';card.dataset.cloudId=row.id;
   const imageWrap=document.createElement('div');imageWrap.className='design-image';
-  const img=document.createElement('img');img.loading='lazy';img.alt='Sovera preview: '+row.title;
-  img.src=supabase.storage.from('public-design-previews').getPublicUrl(row.preview_image_path).data.publicUrl;
+  const img=document.createElement('img');img.loading='lazy';img.alt='Sovera preview: '+row.title;img.src=row.previewUrl;
+  img.addEventListener('error',()=>{img.alt='Preview expired; refresh Explore to load a new preview.';img.style.display='none';const expired=document.createElement('div');expired.className='section-footnote';expired.textContent='Preview expired. Refresh Explore to load a fresh link.';imageWrap.append(expired)},{once:true});
   imageWrap.append(img);const badge=document.createElement('span');badge.className='design-label';badge.textContent='Community · '+(row.garment_type||'Design');imageWrap.append(badge);
   const info=document.createElement('div');info.className='design-card-info';
   const title=document.createElement('h3');title.textContent=row.title;
@@ -491,16 +491,13 @@ async function loadCloudGallery(){
 }
 async function toggleCloudLike(id,button){
  if(!supabase||!supabaseSession||!previewUser?.isCloud){openAuth('signin');showToast('Sign in to appreciate published designs.');return}
- const {error:insertError}=await supabase.from('design_likes').insert({design_id:id,user_id:previewUser.id});
- let liked=true;
- if(insertError?.code==='23505'){
-  const {error:deleteError}=await supabase.from('design_likes').delete().eq('design_id',id).eq('user_id',previewUser.id);
-  if(deleteError){showToast(deleteError.message);return}liked=false;
- }else if(insertError){showToast(insertError.message||'Like could not be updated.');return}
- const {data,error}=await supabase.from('public_designs').select('like_count').eq('id',id).single();
- if(error){showToast(error.message);return}
+ const {data,error}=await supabase.rpc('toggle_public_design_like',{p_design_id:id});
+ if(error){console.error('Like toggle failed:',error);showToast(error.message||'Appreciation could not be updated.');return}
+ const result=Array.isArray(data)?data[0]:data;
+ if(!result){showToast('Like service returned no result.');return}
+ const liked=Boolean(result.liked);
  button.classList.toggle('liked',liked);button.firstChild.textContent=liked?'♥ ':'♡ ';
- const span=$('span',button);if(span)span.textContent=String(data.like_count||0);
+ const span=$('span',button);if(span)span.textContent=String(result.like_count||0);
  showToast(liked?'Appreciation added.':'Appreciation removed.');
 }
 async function loadCloudComments(id){
