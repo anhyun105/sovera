@@ -8,6 +8,11 @@ if not schema_path.is_file():
     raise SystemExit("ERROR: supabase/schema.sql is missing")
 
 sql = schema_path.read_text(encoding="utf-8")
+migration_path = Path("supabase/migrations/20261025000000_sovera_initial_schema.sql")
+if not migration_path.is_file():
+    raise SystemExit("ERROR: initial Supabase migration is missing")
+if migration_path.read_text(encoding="utf-8") != sql:
+    raise SystemExit("ERROR: schema.sql and initial migration have drifted; keep them byte-for-byte synchronized")
 try:
     statements = parse_sql(sql)
 except Exception as exc:
