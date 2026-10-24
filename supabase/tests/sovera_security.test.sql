@@ -7,7 +7,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pg_catalog;
 
-select plan(18);
+select plan(19);
 
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.profiles'::regclass),
@@ -47,8 +47,8 @@ select ok(
   'anonymous role cannot directly read the private designs table'
 );
 select ok(
-  not has_table_privilege('authenticated', 'public.designs', 'SELECT'),
-  'authenticated role has no broad direct SELECT grant on source designs'
+  has_table_privilege('authenticated', 'public.designs', 'SELECT'),
+  'authenticated owners can query designs while RLS restricts rows to their account'
 );
 select ok(
   not has_table_privilege('anon', 'public.public_designs', 'SELECT'),
