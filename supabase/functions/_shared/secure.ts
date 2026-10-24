@@ -94,6 +94,7 @@ export function safeMetadata(input: unknown) {
 
 export async function requireAdmin(adminClient: ReturnType<typeof createClient>, userId: string, roles = ["admin"]) {
   const { data, error } = await adminClient.from("admin_roles").select("role").eq("user_id", userId).maybeSingle();
-  if (error || !data || !roles.includes(data.role)) return null;
-  return data.role as string;
+  const roleValue = (data as unknown as { role?: string } | null)?.role;
+  if (error || !roleValue || !roles.includes(roleValue)) return null;
+  return roleValue;
 }
