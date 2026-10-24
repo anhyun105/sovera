@@ -1,0 +1,13 @@
+project_id = "replace-with-your-supabase-project-ref"
+
+[functions.virtual-try-on]
+verify_jwt = true
+
+[functions.admin-dashboard]
+verify_jwt = true
+
+[functions.moderate-comment]
+verify_jwt = true
+
+[functions.track-activity]
+verify_jwt = true
