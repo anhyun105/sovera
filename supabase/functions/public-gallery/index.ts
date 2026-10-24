@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
 
     const { data: signed, error: signedError } = await admin.storage
       .from("public-design-previews")
-      .createSignedUrl(row.preview_image_path, 300);
+      .createSignedUrl(row.preview_image_path, 900);
 
     if (signedError || !signed?.signedUrl) {
       console.warn("Could not sign public preview:", row.id, signedError?.message);
