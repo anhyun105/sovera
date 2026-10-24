@@ -207,6 +207,7 @@ $('#userPill').addEventListener('click',openDashboard);
 function renderDashboard(){
  const section=$('#dashboard');if(!section||!previewUser)return;
  section.hidden=false;
+ if(previewUser.isCloud&&supabaseSession){void renderCloudDashboard();return;}
  $('#dashboardHeading').innerHTML='Welcome back,<br><span class="gold">'+escHTML(previewUser.name||'creator')+'.</span>';
  $('#dashboardSubhead').textContent='Your personal design overview. Preview data is stored in this browser only.';
  const owned=getDesigns().filter(d=>d.ownerId===previewUser.id);
@@ -226,6 +227,200 @@ function renderDashboard(){
  if(!owned.length){activity.className='dash-empty';activity.textContent='Save or publish a concept to see recent activity.'}
  else{activity.className='';activity.innerHTML=owned.slice(0,5).map(d=>'<div class="activity-item"><span class="activity-dot"></span><div><strong>'+escHTML(d.visibility==='public'?'Concept marked public':'Concept saved privately')+'</strong><br>'+escHTML(d.name)+'<br><small>'+escHTML(new Date(d.createdAt).toLocaleString())+'</small></div></div>').join('')}
 }
+async function renderCloudDashboard(){
+ if(!supabase||!supabaseSession||!previewUser?.isCloud)return;
+ $('#dashboardSubhead').textContent='Your saved cloud concepts. Full design payloads are protected by database row-level security.';
+ const {data,error}=await supabase.from('designs').select('id,title,garment_type,description,design_data,visibility,created_at,updated_at').order('updated_at',{ascending:false}).limit(100);
+ if(error){console.error(error);$('#dashboardDesigns').textContent='Could not load cloud designs. Check Supabase schema and row-level security.';return}
+ const owned=data||[];
+ $('#dashTotal').textContent=owned.length;
+ $('#dashPrivate').textContent=owned.filter(d=>d.visibility==='private').length;
+ $('#dashPublic').textContent=owned.filter(d=>d.visibility==='public').length;
+ $('#dashMaterials').textContent=new Set(owned.map(d=>d.design_data?.material).filter(Boolean)).size;
+ const list=$('#dashboardDesigns');
+ if(!owned.length){list.className='dash-empty';list.textContent='No cloud concepts yet. Open the atelier and save your first design.'}
+ else{
+  list.className='';
+  list.innerHTML=owned.map(d=>{
+   const details=d.design_data||{};
+   const color=/^#[0-9a-f]{6}$/i.test(details.color||'')?details.color:'#7a233b';
+   return '<div class="dash-design"><div class="dash-swatch" style="background:'+color+'"></div><div class="dash-design-info"><strong>'+escHTML(d.title)+'</strong><small>'+escHTML(materialNames[details.material]||details.material||'Material not set')+' · '+(d.visibility==='public'?'Public preview':'Private draft')+' · '+escHTML(new Date(d.updated_at||d.created_at).toLocaleDateString())+'</small></div><div class="dash-actions"><button data-cloud-open="'+escHTML(d.id)+'">Open</button><button data-cloud-visibility="'+escHTML(d.id)+'">'+(d.visibility==='public'?'Make private':'Publish')+'</button><button data-cloud-delete="'+escHTML(d.id)+'">Delete</button></div></div>';
+  }).join('');
+  $('[data-cloud-open]',list).forEach(b=>b.addEventListener('click',()=>openCloudDesign(owned.find(d=>d.id===b.dataset.cloudOpen))));
+  $('[data-cloud-visibility]',list).forEach(b=>b.addEventListener('click',async()=>{
+   const d=owned.find(x=>x.id===b.dataset.cloudVisibility);if(!d)return;
+   if(d.visibility==='public'){await makeCloudDesignPrivate(d.id)}
+   else{openCloudDesign(d);await saveDesign('public')}
+  }));
+  $('[data-cloud-delete]',list).forEach(b=>b.addEventListener('click',async()=>{
+   const d=owned.find(x=>x.id===b.dataset.cloudDelete);if(d)await deleteCloudDesign(d);
+  }));
+ }
+ const activity=$('#dashboardActivity');
+ if(!owned.length){activity.className='dash-empty';activity.textContent='Saved designs and publication status will appear here.'}
+ else{activity.className='';activity.innerHTML=owned.slice(0,5).map(d=>'<div class="activity-item"><span class="activity-dot"></span><div><strong>'+escHTML(d.visibility==='public'?'Public design':'Private design')+'</strong><br>'+escHTML(d.title)+'<br><small>'+escHTML(new Date(d.updated_at||d.created_at).toLocaleString())+'</small></div></div>').join('')}
+}
+function openCloudDesign(d){
+ if(!d)return;
+ currentDesignId=d.id;
+ const values=d.design_data||{};
+ garmentKind=kindNames[d.garment_type]?d.garment_type:(d.garment_type||'gown');
+ if(!kindNames[garmentKind])garmentKind='gown';
+ garmentColor=/^#[0-9a-f]{6}$/i.test(values.color||'')?values.color:'#7a233b';
+ garmentMaterial=materialNames[values.material]?values.material:'satin';
+ $('#garmentType').value=garmentKind;$('#neckline').value=values.neckline||'Sweetheart';$('#sleeves').value=values.sleeves||'Sculpted';$('#embroidery').value=values.embroidery||'Gold embroidery';
+ $('#bust').value=values.bust||88;$('#waist').value=values.waist||70;$('#length').value=values.length||145;
+ $(' .color-chip').forEach(x=>x.classList.toggle('active',x.dataset.color===garmentColor));
+ $('.material-option').forEach(x=>x.classList.toggle('active',x.dataset.material===garmentMaterial));
+ buildGarment();setView('3d');document.querySelector('#atelier').scrollIntoView({behavior:'smooth'});showToast('Cloud design loaded into the studio.')
+}
+async function makeWatermarkedPreviewBlob(){
+ if(!renderer||!scene||!camera)throw new Error('3D studio is not ready yet.');
+ renderer.render(scene,camera);
+ const sourceBlob=await new Promise(resolve=>renderer.domElement.toBlob(resolve,'image/png'));
+ if(!sourceBlob)throw new Error('Could not render the garment preview. Try the 3D tab again.');
+ const bitmap=await createImageBitmap(sourceBlob);
+ const canvas=document.createElement('canvas');canvas.width=900;canvas.height=1100;
+ const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Preview canvas is unavailable.');
+ ctx.fillStyle='#090807';ctx.fillRect(0,0,canvas.width,canvas.height);
+ const maxW=760,maxH=850,scale=Math.min(maxW/bitmap.width,maxH/bitmap.height);
+ const w=bitmap.width*scale,h=bitmap.height*scale;
+ ctx.drawImage(bitmap,(canvas.width-w)/2,90+(maxH-h)/2,w,h);
+ bitmap.close?.();
+ ctx.strokeStyle='rgba(220,175,92,.7)';ctx.lineWidth=2;ctx.strokeRect(24,24,canvas.width-48,canvas.height-48);
+ ctx.fillStyle='#f0ce91';ctx.font='600 20px Georgia,serif';ctx.fillText('SOVERA',38,58);
+ ctx.fillStyle='#c1a878';ctx.font='12px Arial,sans-serif';ctx.fillText('VALUE YOUR SOUL · DESIGN CONCEPT',38,78);
+ ctx.save();ctx.translate(canvas.width/2,canvas.height/2);ctx.rotate(-Math.PI/6);ctx.fillStyle='rgba(236,207,155,.15)';ctx.font='bold 34px Arial,sans-serif';
+ for(let y=-900;y<900;y+=170)for(let x=-900;x<900;x+=420)ctx.fillText('SOVERA · CONCEPT PREVIEW',x,y);
+ ctx.restore();
+ ctx.fillStyle='#d5b578';ctx.font='14px Arial,sans-serif';ctx.fillText('PUBLIC PREVIEW · SOURCE FILES ARE NOT SHARED',38,canvas.height-42);
+ return await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Could not generate a preview image.')),'image/png'));
+}
+async function saveCloudDesign(visibility,design){
+ if(!supabase||!supabaseSession||!previewUser?.isCloud)throw new Error('Secure cloud account not connected.');
+ const id=currentDesignId||crypto.randomUUID();currentDesignId=id;
+ const data={
+  color:design.color,material:design.material,neckline:design.neckline,sleeves:design.sleeves,
+  embroidery:design.embroidery,bust:Number(design.bust),waist:Number(design.waist),length:Number(design.length),
+  schemaVersion:1
+ };
+ const record={id,user_id:previewUser.id,title:design.name.slice(0,120),garment_type:design.kind,description:'',design_data:data,visibility};
+ const {error:saveError}=await supabase.from('designs').upsert(record,{onConflict:'id'});
+ if(saveError)throw saveError;
+ const {data:oldPreview,error:oldPreviewError}=await supabase.from('public_designs').select('preview_image_path').eq('id',id).maybeSingle();
+ if(oldPreviewError)throw oldPreviewError;
+ if(visibility==='private'){
+  if(oldPreview?.preview_image_path){
+   const {error:removeError}=await supabase.storage.from('public-design-previews').remove([oldPreview.preview_image_path]);
+   if(removeError)console.warn('Old public preview cleanup pending:',removeError.message);
+  }
+  $('#privacyPill').textContent='◉ Cloud private draft';
+  await loadCloudGallery();await renderCloudDashboard();
+  showToast('Design saved to your private cloud library.');
+  return;
+ }
+ let uploadedPath=null;
+ try{
+  const blob=await makeWatermarkedPreviewBlob();
+  uploadedPath=previewUser.id+'/'+id+'-'+Date.now()+'.png';
+  const {error:uploadError}=await supabase.storage.from('public-design-previews').upload(uploadedPath,blob,{contentType:'image/png',cacheControl:'3600',upsert:false});
+  if(uploadError)throw uploadError;
+  const publicRow={id,title:record.title,caption:'',garment_type:design.kind,display_color:design.color,preview_image_path:uploadedPath,published_at:new Date().toISOString()};
+  if(oldPreview?.preview_image_path){
+   const {error:updateError}=await supabase.from('public_designs').update(publicRow).eq('id',id);
+   if(updateError)throw updateError;
+  }else{
+   const {error:insertError}=await supabase.from('public_designs').insert(publicRow);
+   if(insertError)throw insertError;
+  }
+  if(oldPreview?.preview_image_path&&oldPreview.preview_image_path!==uploadedPath){
+   const {error:cleanupError}=await supabase.storage.from('public-design-previews').remove([oldPreview.preview_image_path]);
+   if(cleanupError)console.warn('Old preview cleanup pending:',cleanupError.message);
+  }
+  $('#privacyPill').textContent='◎ Public preview published';
+  await loadCloudGallery();await renderCloudDashboard();showToast('Watermarked design preview published to Explore.');
+ }catch(error){
+  if(uploadedPath)await supabase.storage.from('public-design-previews').remove([uploadedPath]);
+  if(!oldPreview){
+   await supabase.from('designs').update({visibility:'private'}).eq('id',id);
+  }
+  throw error;
+ }
+}
+async function makeCloudDesignPrivate(id){
+ if(!supabase||!previewUser?.isCloud)return;
+ const {data:row,error:readError}=await supabase.from('public_designs').select('preview_image_path').eq('id',id).maybeSingle();
+ if(readError){showToast(readError.message);return}
+ const {error}=await supabase.from('designs').update({visibility:'private'}).eq('id',id);
+ if(error){showToast(error.message);return}
+ if(row?.preview_image_path){
+  const {error:cleanupError}=await supabase.storage.from('public-design-previews').remove([row.preview_image_path]);
+  if(cleanupError)console.warn('Preview file cleanup pending:',cleanupError.message);
+ }
+ await loadCloudGallery();await renderCloudDashboard();showToast('Design made private and removed from Explore.');
+}
+async function deleteCloudDesign(d){
+ if(!supabase||!previewUser?.isCloud||!d)return;
+ if(!confirm('Delete this cloud concept? This cannot be undone.'))return;
+ const {data:row}=await supabase.from('public_designs').select('preview_image_path').eq('id',d.id).maybeSingle();
+ const {error}=await supabase.from('designs').delete().eq('id',d.id);
+ if(error){showToast(error.message||'Could not delete design.');return}
+ if(row?.preview_image_path)await supabase.storage.from('public-design-previews').remove([row.preview_image_path]);
+ if(currentDesignId===d.id)currentDesignId=null;
+ await loadCloudGallery();await renderCloudDashboard();showToast('Cloud concept deleted.');
+}
+async function loadCloudGallery(){
+ if(!supabase)return;
+ const {data,error}=await supabase.from('public_designs').select('id,title,caption,garment_type,display_color,preview_image_path,like_count,published_at,creator_name').order('published_at',{ascending:false}).limit(30);
+ if(error){console.warn('Could not load public designs:',error.message);return}
+ const gallery=$('#gallery');$('.design-card[data-cloud-id]',gallery).forEach(card=>card.remove());
+ for(const row of (data||[]).slice().reverse()){
+  const card=document.createElement('article');card.className='design-card';card.dataset.cloudId=row.id;
+  const imageWrap=document.createElement('div');imageWrap.className='design-image';
+  const img=document.createElement('img');img.loading='lazy';img.alt='Sovera preview: '+row.title;
+  img.src=supabase.storage.from('public-design-previews').getPublicUrl(row.preview_image_path).data.publicUrl;
+  imageWrap.append(img);const badge=document.createElement('span');badge.className='design-label';badge.textContent='Community · '+(row.garment_type||'Design');imageWrap.append(badge);
+  const info=document.createElement('div');info.className='design-card-info';
+  const title=document.createElement('h3');title.textContent=row.title;
+  const who=document.createElement('div');who.className='designer-line';who.textContent='By '+(row.creator_name||'Sovera creator')+' · Published design';
+  const actions=document.createElement('div');actions.className='card-actions';
+  const like=document.createElement('button');like.className='like-btn';like.dataset.cloudDesignId=row.id;like.innerHTML='♡ <span>'+Number(row.like_count||0)+'</span> appreciations';
+  const comment=document.createElement('button');comment.className='comment-btn';comment.dataset.cloudDesignId=row.id;comment.textContent='Comments';
+  actions.append(like,comment);info.append(title,who,actions);card.append(imageWrap,info);gallery.prepend(card);
+ }
+ bindCards();
+}
+async function toggleCloudLike(id,button){
+ if(!supabase||!supabaseSession||!previewUser?.isCloud){openAuth('signin');showToast('Sign in to appreciate published designs.');return}
+ const {error:insertError}=await supabase.from('design_likes').insert({design_id:id,user_id:previewUser.id});
+ let liked=true;
+ if(insertError?.code==='23505'){
+  const {error:deleteError}=await supabase.from('design_likes').delete().eq('design_id',id).eq('user_id',previewUser.id);
+  if(deleteError){showToast(deleteError.message);return}liked=false;
+ }else if(insertError){showToast(insertError.message||'Like could not be updated.');return}
+ const {data,error}=await supabase.from('public_designs').select('like_count').eq('id',id).single();
+ if(error){showToast(error.message);return}
+ button.classList.toggle('liked',liked);button.firstChild.textContent=liked?'♥ ':'♡ ';
+ const span=$('span',button);if(span)span.textContent=String(data.like_count||0);
+ showToast(liked?'Appreciation added.':'Appreciation removed.');
+}
+async function loadCloudComments(id){
+ const list=$('#commentList');if(!list)return;
+ list.textContent='Loading approved comments…';
+ const {data,error}=await supabase.from('design_comments').select('display_name,body,created_at').eq('design_id',id).eq('moderation_status','visible').order('created_at',{ascending:true}).limit(50);
+ if(error){list.textContent='Comments are temporarily unavailable.';return}
+ if(!data?.length){list.textContent='No approved comments yet. New comments are reviewed before appearing publicly.';return}
+ list.innerHTML='';
+ for(const row of data){
+  const item=document.createElement('div');item.className='activity-item';
+  const dot=document.createElement('span');dot.className='activity-dot';
+  const textWrap=document.createElement('div');const name=document.createElement('strong');name.textContent=row.display_name||'Sovera creator';
+  const body=document.createElement('p');body.textContent=row.body;body.style.margin='5px 0';
+  const date=document.createElement('small');date.textContent=new Date(row.created_at).toLocaleDateString();
+  textWrap.append(name,body,date);item.append(dot,textWrap);list.append(item);
+ }
+}
+
 $('#unlockStudio').addEventListener('click',()=>openAuth('signup'));
 function goStudio(){if(!requireCreator())return;document.querySelector('#atelier').scrollIntoView({behavior:'smooth'})}
 ['startTop','heroDesign','communityCreate','ctaDesign','materialsToStudio'].forEach(id=>$('#'+id).addEventListener('click',goStudio));
