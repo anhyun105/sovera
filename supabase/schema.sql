@@ -266,7 +266,7 @@ grant select, insert, update, delete on table public.designs to authenticated;
 grant select, insert, update on table public.profiles to authenticated;
 grant select, insert, delete on table public.public_designs to authenticated;
 grant update (title, caption, garment_type, display_color, preview_image_path, published_at) on table public.public_designs to authenticated;
-grant select on table public.public_designs to anon;
+grant select on table public.public_designs to authenticated;
 
 -- Only the design_id and safe aggregate count are visible, never the liking account UUID.
 grant select (design_id) on table public.design_likes to anon, authenticated;
@@ -311,8 +311,77 @@ for delete to authenticated using ((select auth.uid()) = user_id);
 
 -- Public clients receive approved preview metadata only; no full designs or account UUID.
 drop policy if exists "Anyone can read public preview metadata" on public.public_designs;
-create policy "Anyone can read public preview metadata" on public.public_designs
-for select to anon, authenticated using (true);
+drop policy if exists "Owner reads own public preview path" on public.public_designs;
+create policy "Owner reads own public preview path" on public.public_designs
+for select to authenticated using (
+  exists (
+    select 1 from public.designs d
+    where d.id = public_designs.id
+      and d.user_id = (select auth.uid())
+  )
+);
+
+-- Safe boolean used by community policies without exposing preview paths or owner rows.
+create or replace function public.is_public_design(p_design_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $sovera$
+  select exists (
+    select 1 from public.public_designs p
+    where p.id = p_design_id
+  );
+$sovera$;
+revoke all on function public.is_public_design(uuid) from public;
+grant execute on function public.is_public_design(uuid) to anon, authenticated;
+
+-- Toggle likes atomically without returning other members' user IDs.
+create or replace function public.toggle_public_design_like(p_design_id uuid)
+returns table(liked boolean, like_count integer)
+language plpgsql
+security definer
+set search_path = ''
+as $sovera$
+declare
+  v_user_id uuid := auth.uid();
+  v_liked boolean;
+  v_count integer;
+begin
+  if v_user_id is null then
+    raise exception 'Authentication required';
+  end if;
+  if not public.is_public_design(p_design_id) then
+    raise exception 'Public design not found';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtextextended(v_user_id::text || ':' || p_design_id::text, 0));
+  select exists (
+    select 1 from public.design_likes l
+    where l.design_id = p_design_id and l.user_id = v_user_id
+  ) into v_liked;
+
+  if v_liked then
+    delete from public.design_likes l
+    where l.design_id = p_design_id and l.user_id = v_user_id;
+    v_liked := false;
+  else
+    insert into public.design_likes (design_id, user_id)
+    values (p_design_id, v_user_id)
+    on conflict do nothing;
+    v_liked := true;
+  end if;
+
+  select count(*)::integer into v_count
+  from public.design_likes l where l.design_id = p_design_id;
+
+  update public.public_designs p set like_count = v_count where p.id = p_design_id;
+  return query select v_liked, v_count;
+end;
+$sovera$;
+revoke all on function public.toggle_public_design_like(uuid) from public, anon;
+grant execute on function public.toggle_public_design_like(uuid) to authenticated;
 
 drop policy if exists "Owner publishes own preview of public design" on public.public_designs;
 create policy "Owner publishes own preview of public design" on public.public_designs
@@ -358,7 +427,7 @@ for delete to authenticated using (
 drop policy if exists "Read likes for public designs" on public.design_likes;
 create policy "Read likes for public designs" on public.design_likes
 for select to anon, authenticated using (
-  exists (select 1 from public.public_designs p where p.id = design_likes.design_id)
+  public.is_public_design(design_likes.design_id)
 );
 
 drop policy if exists "User likes as self on public design" on public.design_likes;
@@ -379,7 +448,7 @@ for select to anon, authenticated using (
   (user_id = (select auth.uid()))
   or (
     moderation_status = 'visible'
-    and exists (select 1 from public.public_designs p where p.id = design_comments.design_id)
+    and public.is_public_design(design_comments.design_id)
   )
 );
 
@@ -434,24 +503,77 @@ for delete to authenticated using (
   and (storage.foldername(name))[1] = (select auth.uid())::text
 );
 
--- This bucket is public ONLY because its contents are deliberately published, watermarked previews.
--- Never place original photos, full source designs or measurement files here.
+-- Keep even watermarked previews in a private bucket. The public gallery endpoint
+-- returns short-lived signed URLs only for rows that are explicitly published.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('public-design-previews', 'public-design-previews', true, 4194304, array['image/png','image/jpeg','image/webp'])
-on conflict (id) do update set public = true, file_size_limit = 4194304;
+values ('public-design-previews', 'public-design-previews', false, 4194304, array['image/png','image/jpeg','image/webp'])
+on conflict (id) do update set public = false, file_size_limit = 4194304;
 
 drop policy if exists "Owner uploads own public preview" on storage.objects;
 create policy "Owner uploads own public preview" on storage.objects
 for insert to authenticated with check (
   bucket_id = 'public-design-previews'
-  and (storage.foldername(name))[1] = (select auth.uid())::text
+  and (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
+
+-- Atomic per-user reservation: at most five AI requests in any rolling hour.
+create or replace function public.reserve_ai_tryon_job(p_user_id uuid)
+returns table(allowed boolean, job_id bigint, requests_last_hour integer)
+language plpgsql
+security definer
+set search_path = ''
+as $sovera$
+declare
+  v_count integer;
+  v_job_id bigint;
+begin
+  if auth.uid() is distinct from p_user_id then
+    raise exception 'Authenticated user mismatch';
+  end if;
+  perform pg_advisory_xact_lock(hashtextextended(p_user_id::text || ':sovera-ai', 0));
+  select count(*)::integer into v_count
+  from public.ai_tryon_jobs j
+  where j.user_id = p_user_id
+    and j.created_at >= now() - interval '1 hour';
+
+  if v_count >= 5 then
+    return query select false, null::bigint, v_count;
+    return;
+  end if;
+
+  insert into public.ai_tryon_jobs(user_id, status)
+  values (p_user_id, 'requested')
+  returning id into v_job_id;
+
+  return query select true, v_job_id, v_count + 1;
+end;
+$sovera$;
+revoke all on function public.reserve_ai_tryon_job(uuid) from public, anon, authenticated;
+grant execute on function public.reserve_ai_tryon_job(uuid) to service_role;
+
+-- Assign administrator roles only from the Supabase SQL Editor after verifying auth.users.id.
+-- A trusted Edge Function must read admin_roles; never trust a client role flag.
+
+  and exists (
+    select 1 from public.designs d
+    where d.id = ((storage.foldername(name))[1])::uuid
+      and d.user_id = (select auth.uid())
+  )
 );
 
 drop policy if exists "Owner deletes own public preview" on storage.objects;
 create policy "Owner deletes own public preview" on storage.objects
 for delete to authenticated using (
   bucket_id = 'public-design-previews'
-  and (storage.foldername(name))[1] = (select auth.uid())::text
+  and (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
+
+-- Assign administrator roles only from the Supabase SQL Editor after verifying auth.users.id.
+-- A trusted Edge Function must read admin_roles; never trust a client role flag.
+
+  and exists (
+    select 1 from public.designs d
+    where d.id = ((storage.foldername(name))[1])::uuid
+      and d.user_id = (select auth.uid())
+  )
 );
 
 -- Assign administrator roles only from the Supabase SQL Editor after verifying auth.users.id.
