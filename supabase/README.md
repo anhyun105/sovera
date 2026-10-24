@@ -26,7 +26,7 @@ The GitHub Pages website is live. The cloud integration code in this folder is p
 
 Open **SQL Editor** in the new Supabase project, review `schema.sql`, and run it. The schema creates the tables, RLS policies, private Storage buckets, signed-preview access design, like toggling RPC, creator-reporting tables and AI rate-limit reservation.
 
-The repository CI parses the SQL syntax, but no parser can replace a real Supabase integration test. After running it, verify in **Database → Tables** that all expected tables exist and RLS is enabled. If you already applied an older draft of this schema, take a backup and review the changes before re-running.
+The repository CI parses the SQL syntax, but no parser can replace a real Supabase integration test. After running it, verify in **Database → Tables** that all expected tables exist and RLS is enabled. If you already applied an older draft of this schema, take a backup and review the changes before re-running. The repository includes a pgTAP test file at `supabase/tests/sovera_security.test.sql`; after setting up the local Supabase CLI environment, run `supabase test db` and fix any failing assertions.
 
 ## 3. Configure Auth and email delivery
 
