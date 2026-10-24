@@ -98,3 +98,19 @@ export async function requireAdmin(adminClient: SupabaseClient<any, "public", "p
   if (error || !roleValue || !roles.includes(roleValue)) return null;
   return roleValue;
 }
+
+/**
+ * Fail-closed owner-only gate for privileged Sovera controls.
+ * The Supabase project's trusted secrets must set SOVERA_OWNER_USER_ID to
+ * the owner's verified Auth UUID. The database admin role is also required.
+ * A second user with a mistakenly granted admin role is still blocked unless
+ * their UUID matches the server-side owner lock.
+ */
+export async function requireOwner(
+  adminClient: SupabaseClient<any, "public", "public", any, any>,
+  userId: string
+) {
+  const ownerId = (Deno.env.get("SOVERA_OWNER_USER_ID") || "").trim();
+  if (!ownerId || userId !== ownerId) return null;
+  return await requireAdmin(adminClient, userId, ["admin"]);
+}
