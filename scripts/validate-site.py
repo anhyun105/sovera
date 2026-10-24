@@ -53,8 +53,13 @@ if source.count('data-material="') < 12:
     raise SystemExit("ERROR: expected at least 12 selectable material options")
 if 'id="embroidery"' not in source:
     raise SystemExit("ERROR: garment embellishment control is missing")
-if re.search(r"<input\b[^>]*\btype\s*=\s*['\"]password", source, re.I):
-    raise SystemExit("ERROR: a password field must never be embedded as static HTML; the optional real-auth field is created only after Supabase is configured")
+auth_form = re.search(r'<form\b[^>]*\bid=["\']authForm["\'][^>]*>(.*?)</form\s*>', source, re.I | re.S)
+if not auth_form:
+    raise SystemExit("ERROR: account form is missing")
+if re.search(r"<input\b[^>]*\btype\s*=\s*['\"]password", auth_form.group(1), re.I):
+    raise SystemExit("ERROR: preview/auth form must not contain a password field in static HTML; cloud auth fields are inserted only when Supabase is configured")
+if 'id="cloudPasswordWrap" hidden' not in source:
+    raise SystemExit("ERROR: real-auth password field must remain hidden until the cloud backend is configured")
 
 match = re.search(r'<script\s+type=["\']module["\']\s*>(.*?)</script\s*>', source, re.I | re.S)
 if not match:
