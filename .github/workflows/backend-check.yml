@@ -1,0 +1,46 @@
+name: Validate Sovera backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/**"
+      - "scripts/validate-schema.py"
+      - ".github/workflows/backend-check.yml"
+  pull_request:
+    paths:
+      - "supabase/**"
+      - "scripts/validate-schema.py"
+      - ".github/workflows/backend-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check Supabase Edge Functions
+        run: |
+          deno check supabase/functions/_shared/secure.ts
+          deno check supabase/functions/public-gallery/index.ts
+          deno check supabase/functions/virtual-try-on/index.ts
+          deno check supabase/functions/track-activity/index.ts
+          deno check supabase/functions/report-content/index.ts
+          deno check supabase/functions/admin-dashboard/index.ts
+          deno check supabase/functions/moderate-content/index.ts
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install PostgreSQL parser
+        run: pip install pglast
+      - name: Parse database schema
+        run: python scripts/validate-schema.py
