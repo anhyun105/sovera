@@ -188,7 +188,17 @@ function applyUser(){
   $('#dashboard').hidden=true;
  }
 }
-$('#signinTop').addEventListener('click',()=>{if(previewUser){previewUser=null;sessionStorage.removeItem('sovera-preview-session');applyUser();showToast('Signed out of this browser preview.')}else openAuth('signin')});
+$('#signinTop').addEventListener('click',async()=>{
+ if(previewUser){
+  if(supabase&&previewUser.isCloud){
+   const {error}=await supabase.auth.signOut();
+   if(error){showToast(error.message||'Could not sign out.');return}
+   supabaseSession=null;previewUser=null;currentDesignId=null;applyUser();showToast('Signed out securely.');
+  }else{
+   previewUser=null;sessionStorage.removeItem('sovera-preview-session');currentDesignId=null;applyUser();showToast('Signed out of this browser preview.');
+  }
+ }else openAuth('signin');
+});
 function escHTML(s){return String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 function openDashboard(){if(!previewUser){openAuth('signup');return}$('#dashboard').hidden=false;renderDashboard();$('#dashboard').scrollIntoView({behavior:'smooth'})}
 $('#dashboardTop').addEventListener('click',openDashboard);
@@ -222,7 +232,33 @@ function goStudio(){if(!requireCreator())return;document.querySelector('#atelier
 $('#mobileMenu').addEventListener('click',()=>$('#navlinks').classList.toggle('show'));
 $$$('#navlinks a').forEach(a=>a.addEventListener('click',()=>$('#navlinks').classList.remove('show')));
 window.addEventListener('load',()=>setTimeout(()=>$('#loader').classList.add('hidden'),900));
-try{previewUser=JSON.parse(sessionStorage.getItem('sovera-preview-session')||'null')}catch(_){previewUser=null}applyUser();
+async function activateCloudSession(session){
+ if(!supabase||!session?.user)return;
+ supabaseSession=session;
+ const user=session.user;
+ const name=String(user.user_metadata?.display_name||user.user_metadata?.full_name||user.email?.split('@')[0]||'Sovera creator').slice(0,80);
+ previewUser={id:user.id,email:user.email||'',name,isCloud:true};
+ const {error:profileError}=await supabase.from('profiles').upsert({id:user.id,display_name:name},{onConflict:'id'});
+ if(profileError)console.warn('Could not sync profile display name:',profileError.message);
+ applyUser();
+ await renderDashboard();
+ await loadCloudGallery();
+}
+if(supabase){
+ previewUser=null;applyUser();
+ supabase.auth.onAuthStateChange((event,session)=>{
+  supabaseSession=session;
+  if(session){queueMicrotask(()=>activateCloudSession(session).catch(error=>{console.error(error);showToast('Could not load your cloud account.')}))}
+  else if(event==='SIGNED_OUT'){previewUser=null;currentDesignId=null;applyUser()}
+ });
+ const {data,error}=await supabase.auth.getSession();
+ if(error){console.error('Supabase session check failed:',error);showToast('Cloud authentication is configured but unavailable.')}
+ else if(data.session)await activateCloudSession(data.session);
+ $('#authInfo').textContent='Secure account mode is configured. The backend schema and email redirect settings must also be applied before production use.';
+}else{
+ try{previewUser=JSON.parse(sessionStorage.getItem('sovera-preview-session')||'null')}catch(_){previewUser=null}
+ applyUser();
+}
 function init3d(){const canvas=$('#garmentCanvas');scene=new THREE.Scene();scene.background=null;camera=new THREE.PerspectiveCamera(33,1,.1,100);camera.position.set(0,1.35,6.6);renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.24;scene.add(new THREE.HemisphereLight(0xffe5bf,0x23140d,2.0));const key=new THREE.DirectionalLight(0xffdba0,3.2);key.position.set(3,5,5);scene.add(key);const fill=new THREE.DirectionalLight(0x9eaccb,1.4);fill.position.set(-4,2,1);scene.add(fill);const rim=new THREE.PointLight(0xd69539,19,12);rim.position.set(0,2,-3);scene.add(rim);const floor=new THREE.Mesh(new THREE.CircleGeometry(2.1,64),new THREE.MeshBasicMaterial({color:0x332414,transparent:true,opacity:.16}));floor.rotation.x=-Math.PI/2;floor.position.y=-.02;scene.add(floor);modelRoot=new THREE.Group();scene.add(modelRoot);buildGarment();const resize=()=>{const r=canvas.getBoundingClientRect();if(!r.width||!r.height)return;renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix()};new ResizeObserver(resize).observe(canvas.parentElement);resize();canvas.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;lastY=e.clientY;canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointermove',e=>{if(!drag)return;rotY+=(e.clientX-lastX)*.009;rotX+=(e.clientY-lastY)*.006;rotX=Math.max(-.5,Math.min(.5,rotX));lastX=e.clientX;lastY=e.clientY;modelRoot.rotation.y=rotY;modelRoot.rotation.x=rotX});canvas.addEventListener('pointerup',()=>drag=false);canvas.addEventListener('pointercancel',()=>drag=false);canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.72,Math.min(1.35,zoom+e.deltaY*-.001));camera.position.z=6.6/zoom},{passive:false});const tick=()=>{requestAnimationFrame(tick);if(spinning&&!drag){rotY+=.005;modelRoot.rotation.y=rotY}renderer.render(scene,camera)};tick()}
 function clothMaterial(){const settings={satin:{roughness:.23,metalness:.24,clearcoat:.7},velvet:{roughness:.8,metalness:.04,clearcoat:.05},linen:{roughness:.92,metalness:0,clearcoat:0},organza:{roughness:.3,metalness:.1,clearcoat:.3,transparent:true,opacity:.72},cotton:{roughness:.9,metalness:0,clearcoat:0},chiffon:{roughness:.45,metalness:.03,clearcoat:.2,transparent:true,opacity:.78},georgette:{roughness:.72,metalness:.01,clearcoat:.08},crepe:{roughness:.68,metalness:.02,clearcoat:.1},lace:{roughness:.62,metalness:.04,clearcoat:.14,transparent:true,opacity:.9},brocade:{roughness:.42,metalness:.38,clearcoat:.3},denim:{roughness:.88,metalness:0,clearcoat:0},jersey:{roughness:.76,metalness:0,clearcoat:.04}}[garmentMaterial]||{roughness:.7,metalness:0};return new THREE.MeshPhysicalMaterial({color:garmentColor,side:THREE.DoubleSide,...settings})}
 function addMesh(geo,mat,x=0,y=0,z=0){const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);modelRoot.add(m);return m}
