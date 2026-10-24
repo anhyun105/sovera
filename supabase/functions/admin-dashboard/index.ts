@@ -1,4 +1,4 @@
-import { authenticatedContext, handleOptions, jsonResponse, requireAdmin } from "../_shared/secure.ts";
+import { authenticatedContext, handleOptions, jsonResponse, requireOwner } from "../_shared/secure.ts";
 
 Deno.serve(async (req) => {
   const origin = req.headers.get("Origin") || "";
@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: ctx.error || "Authentication failed." }, ctx.status, ctx.origin);
   }
 
-  const role = await requireAdmin(ctx.adminClient, ctx.user.id, ["admin"]);
+  const role = await requireOwner(ctx.adminClient, ctx.user.id);
   if (!role) return jsonResponse({ error: "Administrator access is required." }, 403, ctx.origin);
 
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
