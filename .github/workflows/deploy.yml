@@ -30,7 +30,7 @@ jobs:
       - name: Upload static website
         uses: actions/upload-pages-artifact@v3
         with:
-          path: index.html
+          path: .
       - name: Publish website
         id: deployment
         uses: actions/deploy-pages@v4
