@@ -212,6 +212,7 @@ function applyUser(){
 $('#signinTop').addEventListener('click',async()=>{
  if(previewUser){
   if(supabase&&previewUser.isCloud){
+   await trackCloudEvent('sign_out',null,{source:'web'});
    const {error}=await supabase.auth.signOut();
    if(error){showToast(error.message||'Could not sign out.');return}
    supabaseSession=null;previewUser=null;currentDesignId=null;applyUser();showToast('Signed out securely.');
@@ -396,10 +397,14 @@ async function saveCloudDesign(visibility,design){
   schemaVersion:1
  };
  const record={id,user_id:previewUser.id,title:design.name.slice(0,120),garment_type:design.kind,description:'',design_data:data,visibility};
+ const {data:previousDesign,error:previousDesignError}=await supabase.from('designs').select('visibility').eq('id',id).maybeSingle();
+ if(previousDesignError)throw previousDesignError;
  const {data:oldPreview,error:oldPreviewError}=await supabase.from('public_designs').select('preview_image_path').eq('id',id).maybeSingle();
  if(oldPreviewError)throw oldPreviewError;
  const {error:saveError}=await supabase.from('designs').upsert(record,{onConflict:'id'});
  if(saveError)throw saveError;
+ const eventType=visibility==='public'?(previousDesign?.visibility==='public'?'design_updated':'design_published'):(previousDesign?.visibility==='public'?'design_made_private':(previousDesign?'design_updated':'design_created'));
+ await trackCloudEvent(eventType,id,{garmentType:design.kind,visibility,material:design.material});
  if(visibility==='private'){
   if(oldPreview?.preview_image_path){
    const {error:removeError}=await supabase.storage.from('public-design-previews').remove([oldPreview.preview_image_path]);
@@ -444,6 +449,7 @@ async function makeCloudDesignPrivate(id){
  if(readError){showToast(readError.message);return}
  const {error}=await supabase.from('designs').update({visibility:'private'}).eq('id',id);
  if(error){showToast(error.message);return}
+ await trackCloudEvent('design_made_private',id,{visibility:'private'});
  if(row?.preview_image_path){
   const {error:cleanupError}=await supabase.storage.from('public-design-previews').remove([row.preview_image_path]);
   if(cleanupError)console.warn('Preview file cleanup pending:',cleanupError.message);
@@ -454,6 +460,7 @@ async function deleteCloudDesign(d){
  if(!supabase||!previewUser?.isCloud||!d)return;
  if(!confirm('Delete this cloud concept? This cannot be undone.'))return;
  const {data:row}=await supabase.from('public_designs').select('preview_image_path').eq('id',d.id).maybeSingle();
+ await trackCloudEvent('design_deleted',d.id,{garmentType:d.garment_type});
  const {error}=await supabase.from('designs').delete().eq('id',d.id);
  if(error){showToast(error.message||'Could not delete design.');return}
  if(row?.preview_image_path)await supabase.storage.from('public-design-previews').remove([row.preview_image_path]);
@@ -537,8 +544,8 @@ if(supabase){
  previewUser=null;applyUser();
  supabase.auth.onAuthStateChange((event,session)=>{
   supabaseSession=session;
-  if(session){queueMicrotask(()=>activateCloudSession(session).catch(error=>{console.error(error);showToast('Could not load your cloud account.')}))}
-  else if(event==='SIGNED_OUT'){previewUser=null;currentDesignId=null;applyUser()}
+  if(session){queueMicrotask(()=>activateCloudSession(session).then(()=>{if(event==='SIGNED_IN')return trackCloudEvent('sign_in',null,{source:'web'})}).catch(error=>{console.error(error);showToast('Could not load your cloud account.')}))}
+  else if(event==='SIGNED_OUT'){previewUser=null;currentDesignId=null;applyUser();void loadCloudGallery()}
  });
  const {data,error}=await supabase.auth.getSession();
  if(error){console.error('Supabase session check failed:',error);showToast('Cloud authentication is configured but unavailable.')}
@@ -681,6 +688,7 @@ $('#commentSend').addEventListener('click',async()=>{
  if(supabase&&activeCommentDesignId&&previewUser?.isCloud){
   const {error}=await supabase.from('design_comments').insert({design_id:activeCommentDesignId,user_id:previewUser.id,body,moderation_status:'pending'});
   if(error){showToast(error.message||'Could not submit the comment.');return}
+  await trackCloudEvent('comment_submitted',activeCommentDesignId,{source:'community'});
   closeModals();showToast('Comment submitted for review before public display.');return;
  }
  closeModals();showToast('Comment preview only — not shared publicly.');
