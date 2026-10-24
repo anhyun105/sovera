@@ -53,11 +53,11 @@ export async function authenticatedContext(req: Request) {
     return { error: "Sign in is required.", status: 401, origin, user: null, userClient: null, adminClient: null };
   }
 
-  const url = Deno.env.get("SUPABASE_URL");
+  const url = Deno.env.get("SUPABASE_URL") || Deno.env.get("SOVERA_SUPABASE_URL");
   const publishableKeys = parseObject(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS"));
-  const publishableKey = publishableKeys.default || Deno.env.get("SUPABASE_ANON_KEY");
+  const publishableKey = publishableKeys.default || Deno.env.get("SOVERA_SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY");
   const secretKeys = parseObject(Deno.env.get("SUPABASE_SECRET_KEYS"));
-  const secretKey = secretKeys.default || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const secretKey = secretKeys.default || Deno.env.get("SOVERA_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!url || !publishableKey || !secretKey) {
     return { error: "Supabase server keys are not configured.", status: 503, origin, user: null, userClient: null, adminClient: null };
   }
