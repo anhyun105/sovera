@@ -247,6 +247,75 @@ function renderDashboard(){
  if(!owned.length){activity.className='dash-empty';activity.textContent='Save or publish a concept to see recent activity.'}
  else{activity.className='';activity.innerHTML=owned.slice(0,5).map(d=>'<div class="activity-item"><span class="activity-dot"></span><div><strong>'+escHTML(d.visibility==='public'?'Concept marked public':'Concept saved privately')+'</strong><br>'+escHTML(d.name)+'<br><small>'+escHTML(new Date(d.createdAt).toLocaleString())+'</small></div></div>').join('')}
 }
+async function trackCloudEvent(eventType,designId=null,metadata={}){
+ if(!supabase||!supabaseSession||!previewUser?.isCloud)return;
+ const {error}=await supabase.functions.invoke('track-activity',{body:{eventType,designId,metadata}});
+ if(error)console.warn('Privacy-minimal activity logging unavailable:',error.message);
+}
+function buildAdminItem(title,description,meta,actions){
+ const item=document.createElement('div');item.className='admin-item';
+ const body=document.createElement('div');body.className='admin-item-body';
+ const heading=document.createElement('strong');heading.textContent=title;
+ const paragraph=document.createElement('p');paragraph.textContent=description||'';
+ const small=document.createElement('small');small.textContent=meta||'';
+ body.append(heading,paragraph,small);
+ const actionWrap=document.createElement('div');actionWrap.className='admin-item-actions';
+ for(const action of actions){
+  const button=document.createElement('button');button.textContent=action.label;
+  if(action.danger)button.classList.add('danger');
+  button.addEventListener('click',action.onClick);
+  actionWrap.append(button);
+ }
+ item.append(body,actionWrap);return item;
+}
+async function runModeration(targetType,targetId,action){
+ if(!supabase||!previewUser?.isCloud)return;
+ if(action==='take_down'&&!confirm('Make this published design or reported comment unavailable?'))return;
+ const {data,error}=await supabase.functions.invoke('moderate-content',{body:{targetType,targetId,action}});
+ if(error){console.error('Moderation action failed:',error);showToast(error.message||'Moderation function is not deployed or access was denied.');return}
+ showToast(data?.message||'Moderation action completed.');
+ await loadAdminDashboard();await loadCloudGallery();await renderCloudDashboard();
+}
+async function loadAdminDashboard(){
+ const panel=$('#adminPanel');if(!panel)return;
+ panel.hidden=true;
+ if(!supabase||!supabaseSession||!previewUser?.isCloud)return;
+ const {data,error}=await supabase.functions.invoke('admin-dashboard',{body:{}});
+ if(error){if(error.status!==403)console.warn('Admin dashboard unavailable:',error.message);return}
+ if(!data?.metrics)return;
+ panel.hidden=false;
+ const m=data.metrics;
+ $('#adminAccounts').textContent=m.accounts??0;$('#adminDesigns').textContent=m.savedDesigns??0;
+ $('#adminPublic').textContent=m.publicDesigns??0;$('#adminActive').textContent=m.activeUsers7d??0;
+ $('#adminPending').textContent=m.pendingComments??0;$('#adminReports').textContent=m.openReports??0;
+ $('#adminEvents').textContent=m.events24h??0;$('#adminAi').textContent=m.aiTryOnRequests24h??0;
+ const comments=$('#adminComments');comments.innerHTML='';
+ if(!data.pendingComments?.length)comments.textContent='No pending comments.';
+ else for(const item of data.pendingComments){
+  comments.append(buildAdminItem('Comment from '+(item.display_name||'Sovera creator'),item.body,'Submitted '+new Date(item.created_at).toLocaleString(),[
+   {label:'Approve',onClick:()=>runModeration('comment',item.id,'approve')},
+   {label:'Hide',onClick:()=>runModeration('comment',item.id,'hide')},
+   {label:'Delete',danger:true,onClick:()=>{if(confirm('Delete this comment permanently?'))runModeration('comment',item.id,'delete')}}
+  ]));
+ }
+ const reports=$('#adminReportsQueue');reports.innerHTML='';
+ if(!data.openReports?.length)reports.textContent='No open reports.';
+ else for(const item of data.openReports){
+  const target=item.design_id?'Published design':'Community comment';
+  const desc=(item.details||'No extra details provided.')+'\nReason: '+item.reason;
+  const actions=[{label:'Dismiss',onClick:()=>runModeration('report',item.id,'dismiss')},{label:'Mark reviewed',onClick:()=>runModeration('report',item.id,'resolve')}];
+  if(item.design_id||item.comment_id)actions.push({label:'Take down',danger:true,onClick:()=>runModeration('report',item.id,'take_down')});
+  reports.append(buildAdminItem(target+' report',desc,'Reported '+new Date(item.created_at).toLocaleString(),actions));
+ }
+ const events=$('#adminRecentEvents');events.innerHTML='';
+ if(!data.recentEvents?.length)events.textContent='No recorded events.';
+ else for(const item of data.recentEvents){
+  const metadata=item.metadata&&Object.keys(item.metadata).length?JSON.stringify(item.metadata):'';
+  events.append(buildAdminItem(item.event_type.replaceAll('_',' '),metadata,'Recorded '+new Date(item.created_at).toLocaleString(),[]));
+ }
+}
+$('#adminRefresh').addEventListener('click',()=>loadAdminDashboard());
+
 async function renderCloudDashboard(){
  if(!supabase||!supabaseSession||!previewUser?.isCloud)return;
  $('#dashboardSubhead').textContent='Your saved cloud concepts. Full design payloads are protected by database row-level security.';
@@ -279,6 +348,7 @@ async function renderCloudDashboard(){
  const activity=$('#dashboardActivity');
  if(!owned.length){activity.className='dash-empty';activity.textContent='Saved designs and publication status will appear here.'}
  else{activity.className='';activity.innerHTML=owned.slice(0,5).map(d=>'<div class="activity-item"><span class="activity-dot"></span><div><strong>'+escHTML(d.visibility==='public'?'Public design':'Private design')+'</strong><br>'+escHTML(d.title)+'<br><small>'+escHTML(new Date(d.updated_at||d.created_at).toLocaleString())+'</small></div></div>').join('')}
+ await loadAdminDashboard();
 }
 function openCloudDesign(d){
  if(!d)return;
