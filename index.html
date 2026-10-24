@@ -307,7 +307,7 @@ async function loadAdminDashboard(){
  if(!data.openReports?.length)reports.textContent='No open reports.';
  else for(const item of data.openReports){
   const target=item.reported_user_id?'Creator account':item.design_id?'Published design':'Community comment';
-  const desc=(item.details||'No extra details provided.')+'\nReason: '+item.reason;
+  const desc=(item.details||'No extra details provided.')+'\nReason: '+item.reason+(item.reported_user_id?'\nReported account ID: '+item.reported_user_id:'');
   const actions=[{label:'Dismiss',onClick:()=>runModeration('report',item.id,'dismiss')},{label:'Mark reviewed',onClick:()=>runModeration('report',item.id,'resolve')}];
   if(item.reported_user_id)actions.push({label:'Suspend 7 days',danger:true,onClick:()=>{if(confirm('Suspend this reported creator for 7 days? Only admins can do this.'))runModeration('report',item.id,'suspend_7d')}});else if(item.design_id||item.comment_id)actions.push({label:'Take down',danger:true,onClick:()=>runModeration('report',item.id,'take_down')});
   reports.append(buildAdminItem(target+' report',desc,'Reported '+new Date(item.created_at).toLocaleString(),actions));
