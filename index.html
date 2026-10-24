@@ -181,6 +181,7 @@ function applyUser(){
   if(dn)dn.style.display='block';if(dt)dt.style.display='inline-flex';
   if($('#runAiTryOn'))$('#runAiTryOn').disabled=!(supabase&&previewUser.isCloud);
   if($('#aiStatus'))$('#aiStatus').textContent=(supabase&&previewUser.isCloud)?'Photo will be uploaded to private temporary storage and sent to the configured AI provider only after you give consent.':'AI try-on requires a configured Supabase backend and an authenticated cloud account.';
+  if($('#photoPrivacyIntro'))$('#photoPrivacyIntro').textContent=(supabase&&previewUser.isCloud)?'AI preview sends your selected photo to the configured image provider after consent. The original temporary upload is removed after processing; the generated result stays in this browser unless you separately save it.':'Your photo stays in this browser for the local overlay. AI processing is disabled until a secure backend is configured.';
   $('#studioLock').style.display='none';$('#studioLayout').inert=false;$('#studioLayout').setAttribute('aria-hidden','false');$('#privacyPill').textContent='◉ Private preview';
   $('#dashboard').hidden=false;renderDashboard();
  }else{
