@@ -149,7 +149,10 @@ Deno.serve(async (req) => {
         size: "1024x1536",
         quality: "medium",
         output_format: "webp",
+        output_compression: 82,
+        moderation: "auto",
         n: 1,
+        user: safetyIdentifier,
       })
     });
 
