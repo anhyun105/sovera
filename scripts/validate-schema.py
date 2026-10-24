@@ -37,4 +37,15 @@ if "grant select on table public.public_designs to anon" in sql.lower():
 if "grant execute on function public.reserve_ai_tryon_job(uuid) to service_role" not in sql.lower():
     raise SystemExit("ERROR: AI rate reservation must remain server-only")
 
-print(f"OK: PostgreSQL parsed {len(statements)} statements; critical RLS, private preview storage and server-only rate-limit checks passed.")
+test_path = Path("supabase/tests/sovera_security.test.sql")
+if test_path.is_file():
+    try:
+        test_statements = parse_sql(test_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise SystemExit(f"ERROR: PostgreSQL parser rejected {test_path}: {exc}") from exc
+    if len(test_statements) < 20:
+        raise SystemExit(f"ERROR: expected a meaningful SQL security test suite, found {len(test_statements)} statements")
+else:
+    raise SystemExit("ERROR: Supabase security test file is missing")
+
+print(f"OK: PostgreSQL parsed {len(statements)} schema statements and {len(test_statements)} test statements; critical RLS, private preview storage and server-only rate-limit checks passed.")
