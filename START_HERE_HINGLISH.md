@@ -23,14 +23,15 @@
 5. Apne computer par Supabase CLI install karke `supabase login`, `supabase link --project-ref YOUR_PROJECT_REF` chalao.
 6. `supabase/README.md` mein diye gaye commands se server secrets set karo aur sab Edge Functions deploy karo. OpenAI secret sirf tab set karo jab AI try-on activate karna ho.
 7. Apne verified account ka UUID Supabase SQL Editor se `admin_roles` mein `admin` role assign karo. Role ko client-side flag se kabhi grant mat karo.
-8. Do alag test accounts use karke private design/file isolation, public publish/unpublish, comments moderation, reports, account deletion aur AI rate limit test karo.
+8. Apne verified admin account se **My Atelier / Administrator overview → Registered account records** kholo. Wahan account search, email verification, joined/last sign-in, designs/comments/likes counts, individual user record history, CSV export aur 7-day suspension/lift controls milenge.
+9. Do alag test accounts use karke private design/file isolation, public publish/unpublish, comments moderation, reports, account deletion aur AI rate limit test karo.
 
 ## Important limitations
 - 3D mesh concept visual hai, production CAD/pattern grading/cloth physics nahi.
 - 2D drawing illustrative hai; 4D-style view turntable animation hai.
 - AI output, jab connect hoga, visual estimate hoga—real garment fit guarantee nahi.
 - Website screenshots ya external camera se copying ko 100% rok nahi sakti; watermark aur limited previews risk kam kar sakte hain.
-- Real Supabase project credentials aur server secrets abhi user-owned service mein configure karne baaki hain. Isliye shared multi-user features abhi live/verified nahi maane ja sakte.
+- Real Supabase project credentials aur server secrets abhi configure karne baaki hain. Isliye Owner account-record dashboard ka cloud data aur shared multi-user features abhi live/verified nahi maane ja sakte; code deployed hai, backend wiring owner setup ke baad hi active hogi.
 
 Detailed guide: [Supabase backend setup](supabase/README.md)  
 Feature matrix: [FEATURE_STATUS.md](FEATURE_STATUS.md)  
