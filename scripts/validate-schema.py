@@ -30,6 +30,7 @@ required = [
     "function public.is_public_design",
     "function public.toggle_public_design_like",
     "function public.reserve_ai_tryon_job",
+    "function public.admin_user_summaries",
     "values ('public-design-previews', 'public-design-previews', false",
 ]
 missing = [item for item in required if item not in sql.lower()]
@@ -41,6 +42,11 @@ if "grant select on table public.public_designs to anon" in sql.lower():
 
 if "grant execute on function public.reserve_ai_tryon_job(uuid) to service_role" not in sql.lower():
     raise SystemExit("ERROR: AI rate reservation must remain server-only")
+
+if "grant execute on function public.admin_user_summaries(uuid[]) to service_role" not in sql.lower():
+    raise SystemExit("ERROR: account aggregation must remain server-only")
+if "grant execute on function public.admin_user_summaries(uuid[]) to authenticated" in sql.lower():
+    raise SystemExit("ERROR: ordinary signed-in users must not call admin account aggregation")
 
 test_path = Path("supabase/tests/sovera_security.test.sql")
 if test_path.is_file():
