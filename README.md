@@ -1,29 +1,32 @@
 # Sovera — Value your Soul
 
-Sovera is a black-and-gold fashion-atélier website prototype. It uses a custom SV monogram, a couture-inspired home page, an interactive Three.js garment preview, material/color controls, 1D/2D/3D/4D-style workspace tabs, sample inspiration gallery, local preview profiles, and private/public concept controls.
+**Live preview:** https://anhyun105.github.io/sovera/  
+**Source repository:** https://github.com/anhyun105/sovera
 
-## Website
-The website is published from `index.html` using GitHub Pages. Changes pushed to `main` automatically trigger `.github/workflows/deploy.yml`.
+Sovera is a black-and-gold couture-inspired fashion atelier prototype. It pairs the SV identity with a responsive landing page, a custom Three.js garment viewer and a private-first creative workflow.
 
-## Prototype features
-- Responsive Sovera branding and animated logo intro.
-- Interactive Three.js garment scene with orbit, zoom, rotation, material/color and garment-category options.
-- Illustrative 1D tech pack, 2D sketch, and 4D-style turntable preview.
-- Browser-local concept save/publish demo.
-- Approximate local photo overlay preview; photos are not uploaded by this page.
-- Sample inspiration gallery with demo likes and comments UI.
+## Included in the live prototype
 
-## Important limitations
-This is a frontend prototype, **not production-grade fashion CAD**. The 1D/2D views are illustrative, the 3D garment is a stylised concept mesh, 4D is a turntable animation rather than cloth physics, and photo try-on is a label overlay rather than AI body fitting.
+- Responsive editorial landing page and logo intro.
+- Interactive 3D garment concept viewer with orbit, zoom, turntable rotation, material and colour changes, plus garment categories.
+- Illustrative 1D tech pack and 2D sketch tabs, and a 4D-style motion/turntable preview.
+- Guest browsing and tab-session preview profiles.
+- Personal dashboard with saved-concept counts, private/public demo status, material count, recent activity, open and delete controls.
+- Browser-local concept save and publish demo, sample Explore cards, likes/comments preview UI.
+- Local photo overlay preview; photos are not uploaded by the site.
+- GitHub Actions validation and automatic Pages deployment.
+- Privacy-first Supabase schema starter under `supabase/`.
 
-Sign-up creates a browser-local demo profile only. It does not verify email or provide secure authentication, cloud syncing, or a real shared community. Real accounts, public posting, comments, admin analytics, and private cloud storage require a secure backend (for example, Supabase Auth, database Row Level Security, private Storage policies, moderation and retention controls).
+## Important: prototype, not production CAD
 
-No ordinary website can guarantee screenshot or external-camera prevention. Avoid inviting users to upload private designs or personal photos until backend permissions and privacy practices have been reviewed.
+The 3D garment is a stylised concept mesh, not production-grade cloth simulation or pattern engineering. The 1D/2D tabs are illustrative. The 4D tab is a turntable animation, not cloth physics. Photo preview is a simple overlay, not AI body fitting.
 
-## Deploy
-1. Push changes to `main`.
-2. Open repository **Settings → Pages** and choose **GitHub Actions** as the source if asked.
-3. Open **Actions** and wait for **Deploy Sovera to GitHub Pages** to finish successfully.
-4. The site URL appears in the deployment summary and **Settings → Pages**.
+The profile form is **not real authentication**. It does not verify email, and it does not sync data between browsers/devices. Saved concepts live in the current browser's local storage. Publishing is a local demo interaction, not a real shared community post. Do not enter a real password or upload confidential designs/personal photos to the prototype.
 
-The 3D library, fonts and inspiration images load from third-party CDNs.
+To launch as a real community, connect Supabase Auth and storage/database APIs, apply and test the RLS policies, implement server-side preview signing/moderation/admin analytics, and replace local-only community interactions. See [Supabase setup](supabase/README.md) and [Security notes](SECURITY.md).
+
+## Deployment
+
+Push changes to `main`. The workflow validates the HTML and JavaScript syntax, then deploys the root static site to GitHub Pages. Watch the [Actions workflow](https://github.com/anhyun105/sovera/actions) for the latest result.
+
+The site loads Three.js, fonts and editorial inspiration images from third-party CDNs, which must be reachable in the visitor's browser.
