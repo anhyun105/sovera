@@ -2,8 +2,7 @@ import { authenticatedContext, handleOptions, jsonResponse, safeMetadata } from 
 
 const allowedEvents = new Set([
   "sign_in", "sign_out", "design_created", "design_updated",
-  "design_published", "design_made_private", "design_deleted",
-  "comment_reported", "comment_submitted", "user_reported", "design_reported", "comment_moderated"
+  "design_published", "design_made_private", "design_deleted", "comment_submitted"
 ]);
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
