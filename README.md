@@ -8,9 +8,9 @@ Sovera is a black-and-gold couture-inspired fashion atelier prototype. It pairs 
 ## Included in the live prototype
 
 - Responsive editorial landing page and logo intro.
-- Interactive 3D garment concept viewer with orbit, zoom, turntable rotation, material and colour changes, plus garment categories.
+- Interactive 3D garment concept viewer with orbit, zoom, turntable rotation, 12 material choices, colour changes, garment categories and embellishment controls.
 - Illustrative 1D tech pack and 2D sketch tabs, and a 4D-style motion/turntable preview.
-- Guest browsing and tab-session preview profiles.
+- Guest browsing in view-only mode and tab-session preview profiles.
 - Personal dashboard with saved-concept counts, private/public demo status, material count, recent activity, open and delete controls.
 - Browser-local concept save and publish demo, sample Explore cards, likes/comments preview UI.
 - Local photo overlay preview; photos are not uploaded by the site.
