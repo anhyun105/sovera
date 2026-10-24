@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     ctx.adminClient.from("activity_events").select("user_id").gte("created_at", since7d).not("user_id", "is", null).limit(5000),
     ctx.adminClient.from("activity_events").select("id,user_id,event_type,design_id,metadata,created_at").order("created_at", { ascending: false }).limit(40),
     ctx.adminClient.from("design_comments").select("id,design_id,user_id,display_name,body,created_at").eq("moderation_status", "pending").order("created_at", { ascending: true }).limit(50),
-    ctx.adminClient.from("content_reports").select("id,reporter_id,design_id,comment_id,reason,details,created_at,status").eq("status", "open").order("created_at", { ascending: true }).limit(50),
+    ctx.adminClient.from("content_reports").select("id,reporter_id,design_id,comment_id,reported_user_id,reason,details,created_at,status").eq("status", "open").order("created_at", { ascending: true }).limit(50),
     ctx.adminClient.from("ai_tryon_jobs").select("id", { count: "exact", head: true }).gte("created_at", since24h)
   ]);
 
