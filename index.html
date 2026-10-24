@@ -98,10 +98,11 @@
 <div class="wrap"><section class="cta-band"><div><div class="eyebrow">Your world is waiting</div><h2>Make room for<br><span class="gold">your imagination.</span></h2><p>Begin with a colour, a silhouette or a thought you cannot let go of. The first sketch is always an invitation.</p></div><button class="btn btn-gold" id="ctaDesign">Step into Sovera ↗</button></section></div>
 </main>
 <footer class="footer"><div class="wrap"><div class="footer-top"><a class="brand" href="#home"><div class="brand-symbol">SV</div><div><div class="brand-name">SOVERA</div><div class="brand-tag">Value your Soul</div></div></a><div class="footer-links"><a href="#atelier">Atelier</a><a href="#materials">Materials</a><a href="#explore">Explore</a><a href="#philosophy">Our philosophy</a><a href="./privacy.html">Privacy</a><a href="./terms.html">Terms</a><button class="btn btn-quiet" id="privacyInfo" style="padding:4px">Privacy note</button></div></div><div class="footer-bottom"><span>© 2026 Sovera. Value your Soul.</span><span>A creative prototype · Not a production garment engineering tool.</span></div></div></footer>
-<div class="modal-backdrop" id="authModal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle"><button class="modal-close" data-close aria-label="Close">×</button><div class="brand"><div class="brand-symbol">SV</div><div><div class="brand-name">SOVERA</div><div class="brand-tag">Value your Soul</div></div></div><div class="eyebrow" style="margin-top:28px" id="authEyebrow">Your private atelier awaits</div><h2 id="authTitle">Begin your<br><span class="gold">own chapter.</span></h2><p id="authIntro">Create a local preview profile to explore the studio controls.</p><p class="demo-warning">Preview mode: this form does not verify email or create a real account. Do not enter a password. Real authentication and secure cloud data need a configured backend.</p><form id="authForm"><label for="authName" id="authNameLabel">Your name</label><input id="authName" name="name" autocomplete="name" placeholder="How should we call you?"><label for="authEmail">Email address</label><input id="authEmail" type="email" name="email" required autocomplete="email" placeholder="you@example.com"><div id="cloudPasswordWrap" hidden></div><p class="demo-warning" id="authInfo">No password is needed here. This temporary profile is only for exploring the demo and is not a real Sovera account.</p><button class="btn btn-gold" id="authSubmit" type="submit">Continue into Sovera ↗</button></form><button class="form-switch" id="switchAuth">Already have a preview profile? Sign in</button></section></div>
+<div class="modal-backdrop" id="authModal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle"><button class="modal-close" data-close aria-label="Close">×</button><div class="brand"><div class="brand-symbol">SV</div><div><div class="brand-name">SOVERA</div><div class="brand-tag">Value your Soul</div></div></div><div class="eyebrow" style="margin-top:28px" id="authEyebrow">Your private atelier awaits</div><h2 id="authTitle">Begin your<br><span class="gold">own chapter.</span></h2><p id="authIntro">Create a local preview profile to explore the studio controls.</p><p class="demo-warning">Preview mode: this form does not verify email or create a real account. Do not enter a password. Real authentication and secure cloud data need a configured backend.</p><form id="authForm"><label for="authName" id="authNameLabel">Your name</label><input id="authName" name="name" autocomplete="name" placeholder="How should we call you?"><label for="authEmail">Email address</label><input id="authEmail" type="email" name="email" required autocomplete="email" placeholder="you@example.com"><div id="cloudPasswordWrap" hidden></div><p class="demo-warning" id="authInfo">No password is needed here. This temporary profile is only for exploring the demo and is not a real Sovera account.</p><button class="btn btn-gold" id="authSubmit" type="submit">Continue into Sovera ↗</button></form><button class="form-switch" id="switchAuth">Already have a preview profile? Sign in</button><button class="form-switch" id="forgotPassword" style="display:none">Forgot your password?</button></section></div>
 <div class="modal-backdrop" id="photoModal"><section class="modal"><button class="modal-close" data-close aria-label="Close">×</button><div class="eyebrow">Local photo preview</div><h2>Your look,<br><span class="gold">your perspective.</span></h2><p id="photoPrivacyIntro">Your selected photo stays in this browser for the local preview. The AI option is disabled until a secure backend is connected.</p><div id="photoPreview" style="max-height:360px;overflow:hidden;position:relative;background:#090807;text-align:center"></div><div id="aiTryOnControls" style="margin-top:14px;padding:14px;border:1px solid #403221;background:#17120d"><label style="display:flex;align-items:flex-start;gap:9px;font-size:11px;line-height:1.7;color:#c9b89b"><input type="checkbox" id="aiConsent" style="margin-top:3px;accent-color:#d6a653"> I consent to send this photo to the configured AI image provider for outfit editing. I understand the generated result is an estimate, and the image may be processed under the provider’s terms.</label><button class="btn btn-gold" id="runAiTryOn" style="width:100%;margin-top:13px" disabled>Generate realistic outfit preview ↗</button><p id="aiStatus" class="section-footnote">AI try-on requires a configured Supabase project and a server-side OpenAI API key.</p></div><div id="aiPreviewResult" style="margin-top:15px"></div><button class="btn" id="closePhoto">Close preview</button></section></div>
 <div class="modal-backdrop" id="commentModal"><section class="modal"><button class="modal-close" data-close aria-label="Close">×</button><div class="eyebrow">Community preview</div><h2 id="commentTitle">A concept worth discussing.</h2><p>New comments are reviewed before appearing publicly. In preview mode, comments are not shared with other users.</p><div id="commentList" style="max-height:190px;overflow:auto;margin:12px 0"></div><label for="commentDraft">Your thoughts</label><textarea id="commentDraft" rows="3" placeholder="Share a kind, constructive thought..."></textarea><button class="btn btn-gold" id="commentSend">Preview comment ↗</button></section></div>
 <div class="modal-backdrop" id="reportModal"><section class="modal"><button class="modal-close" data-close aria-label="Close">×</button><div class="eyebrow">Community safety</div><h2>Report this<br><span class="gold">content.</span></h2><p>Reports are reviewed by Sovera moderators. Please avoid including private or unnecessary personal information.</p><label for="reportReason">Reason for report</label><select id="reportReason" class="select"><option value="copied_work">Possible copied work</option><option value="harassment">Harassment</option><option value="spam">Spam or misleading content</option><option value="unsafe_content">Unsafe or inappropriate content</option><option value="privacy">Privacy concern</option><option value="other">Other</option></select><label for="reportDetails">Additional details (optional)</label><textarea id="reportDetails" rows="3" maxlength="800" placeholder="Describe the concern briefly…"></textarea><button class="btn btn-gold" id="sendReport">Submit report ↗</button></section></div>
+<div class="modal-backdrop" id="resetPasswordModal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="resetPasswordTitle"><button class="modal-close" data-close aria-label="Close">×</button><div class="eyebrow">Account recovery</div><h2 id="resetPasswordTitle">Choose a new<br><span class="gold">password.</span></h2><p>Choose a strong password you have not used on another site.</p><label for="newPassword">New password</label><input id="newPassword" class="field" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters"><label for="confirmNewPassword">Confirm new password</label><input id="confirmNewPassword" class="field" type="password" autocomplete="new-password" minlength="8" placeholder="Repeat your new password"><button class="btn btn-gold" id="saveNewPassword" style="width:100%;margin-top:18px">Update password ↗</button></section></div>
 <div class="modal-backdrop" id="deleteAccountModal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="deleteAccountTitle"><button class="modal-close" data-close aria-label="Close">×</button><div class="eyebrow">Irreversible action</div><h2 id="deleteAccountTitle">Delete your<br><span class="gold">Sovera account.</span></h2><p>This permanently deletes your account, cloud designs, public previews, and stored photo/design files. Enter the exact phrase below to confirm. The action cannot be undone.</p><label for="deleteAccountPhrase">Confirmation phrase</label><input id="deleteAccountPhrase" class="field" autocomplete="off" placeholder="DELETE MY SOVERA ACCOUNT"><button class="btn" id="confirmDeleteAccount" style="width:100%;margin-top:18px;border-color:#67343a;color:#e7b2b2">Permanently delete account</button><p class="section-footnote">If the backend deletion function is not deployed or configured, this action will fail safely without showing a false success.</p></section></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>window.setTimeout(()=>document.getElementById("loader")?.classList.add("hidden"),4500);</script>
@@ -140,6 +141,7 @@ function openAuth(mode){
  $('#authSubmit').textContent=mode==='signup'?'Create account ↗':'Sign in securely ↗';
  $('#switchAuth').textContent=mode==='signup'?'Already have an account? Sign in':'New to Sovera? Create an account';
  const info=$('#authInfo'),wrap=$('#cloudPasswordWrap');
+ $('#forgotPassword').style.display=(supabase&&mode==='signin')?'block':'none';
  if(supabase){
   ensureCloudPasswordField();wrap.hidden=false;$('#cloudPassword').value='';
   $('#authIntro').textContent=mode==='signup'?'Create your Sovera account. Email verification depends on your Supabase project settings.':'Sign in with your verified Sovera account.';
@@ -152,6 +154,16 @@ function openAuth(mode){
  openModal('authModal');
 }
 $('#switchAuth').addEventListener('click',()=>openAuth(authMode==='signup'?'signin':'signup'));
+$('#forgotPassword').addEventListener('click',async()=>{
+ if(!supabase){showToast('Password recovery is available only for a real cloud account.');return}
+ const email=$('#authEmail').value.trim().toLowerCase();
+ if(!email){showToast('Enter the account email first.');$('#authEmail').focus();return}
+ try{
+  const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:'https://anhyun105.github.io/sovera/'});
+  if(error)throw error;
+  showToast('If that account exists, a password reset email will be sent.');
+ }catch(error){console.error('Password reset request failed:',error);showToast('Password reset could not be requested. Check Auth email settings.')}
+});
 $('#authForm').addEventListener('submit',async e=>{
  e.preventDefault();
  const email=$('#authEmail').value.trim().toLowerCase();
@@ -566,6 +578,7 @@ if(supabase){
  previewUser=null;applyUser();
  supabase.auth.onAuthStateChange((event,session)=>{
   supabaseSession=session;
+  if(event==='PASSWORD_RECOVERY'){openModal('resetPasswordModal');return}
   if(session){queueMicrotask(()=>activateCloudSession(session).then(()=>{if(event==='SIGNED_IN')return trackCloudEvent('sign_in',null,{source:'web'})}).catch(error=>{console.error(error);showToast('Could not load your cloud account.')}))}
   else if(event==='SIGNED_OUT'){previewUser=null;currentDesignId=null;applyUser();void loadCloudGallery()}
  });
@@ -750,6 +763,22 @@ function bindCards(){
   });
  });
 }
+$('#saveNewPassword').addEventListener('click',async()=>{
+ if(!supabase){showToast('Cloud authentication is not configured.');return}
+ const password=$('#newPassword').value,confirmPassword=$('#confirmNewPassword').value;
+ if(password.length<8){showToast('Use at least 8 characters for the new password.');return}
+ if(password!==confirmPassword){showToast('The two passwords do not match.');return}
+ const btn=$('#saveNewPassword');btn.disabled=true;btn.textContent='Updating…';
+ try{
+  const {error}=await supabase.auth.updateUser({password});
+  if(error)throw error;
+  $('#newPassword').value='';$('#confirmNewPassword').value='';closeModals();
+  await supabase.auth.signOut({scope:'local'}).catch(()=>{});
+  supabaseSession=null;previewUser=null;applyUser();
+  showToast('Password updated. Sign in with your new password.');
+ }catch(error){console.error('Password update failed:',error);showToast(error?.message||'Password could not be updated.')}
+ finally{btn.disabled=false;btn.textContent='Update password ↗'}
+});
 $('#openDeleteAccount').addEventListener('click',()=>{
  if(!supabase||!previewUser?.isCloud){showToast('Account deletion requires a configured cloud account.');return}
  $('#deleteAccountPhrase').value='';openModal('deleteAccountModal');
