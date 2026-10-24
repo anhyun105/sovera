@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 const allowedOrigins = new Set([
   "https://anhyun105.github.io",
@@ -92,7 +92,7 @@ export function safeMetadata(input: unknown) {
   return result;
 }
 
-export async function requireAdmin(adminClient: ReturnType<typeof createClient>, userId: string, roles = ["admin"]) {
+export async function requireAdmin(adminClient: SupabaseClient<any, "public", "public", any, any>, userId: string, roles = ["admin"]) {
   const { data, error } = await adminClient.from("admin_roles").select("role").eq("user_id", userId).maybeSingle();
   const roleValue = (data as unknown as { role?: string } | null)?.role;
   if (error || !roleValue || !roles.includes(roleValue)) return null;
