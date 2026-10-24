@@ -3,7 +3,7 @@ import { authenticatedContext, handleOptions, jsonResponse, safeMetadata } from 
 const allowedEvents = new Set([
   "sign_in", "sign_out", "design_created", "design_updated",
   "design_published", "design_made_private", "design_deleted",
-  "comment_reported", "user_reported", "design_reported", "comment_moderated"
+  "comment_reported", "comment_submitted", "user_reported", "design_reported", "comment_moderated"
 ]);
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  if (eventType === "design_reported" || eventType === "comment_reported") {
+  if (eventType === "design_reported" || eventType === "comment_reported" || eventType === "comment_submitted") {
     if (!designId) return jsonResponse({ error: "A public design ID is required for this report event." }, 400, ctx.origin);
     const { data, error } = await ctx.userClient
       .from("public_designs").select("id").eq("id", designId).maybeSingle();
