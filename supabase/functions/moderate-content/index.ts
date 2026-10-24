@@ -1,4 +1,4 @@
-import { authenticatedContext, handleOptions, jsonResponse, requireAdmin } from "../_shared/secure.ts";
+import { authenticatedContext, handleOptions, jsonResponse, requireOwner } from "../_shared/secure.ts";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   if (ctx.error || !ctx.user || !ctx.adminClient) {
     return jsonResponse({ error: ctx.error || "Authentication failed." }, ctx.status, ctx.origin);
   }
-  const role = await requireAdmin(ctx.adminClient, ctx.user.id, ["admin", "moderator"]);
+  const role = await requireOwner(ctx.adminClient, ctx.user.id);
   if (!role) return jsonResponse({ error: "Moderator access is required." }, 403, ctx.origin);
 
   let body: Record<string, unknown>;
