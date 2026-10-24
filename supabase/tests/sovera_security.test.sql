@@ -89,4 +89,4 @@ select ok(
 );
 
 select * from finish();
-rollback();
+rollback;
