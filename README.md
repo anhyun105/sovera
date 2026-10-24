@@ -25,6 +25,7 @@ The 3D scene is a stylised concept mesh, not production garment CAD, a graded se
 
 - [Feature status matrix and launch checklist](FEATURE_STATUS.md)
 - [Hinglish setup guide](START_HERE_HINGLISH.md)
+- [Owner dashboard setup and single-owner lock (Hinglish)](OWNER_DASHBOARD_SETUP_HINGLISH.md)
 - [Supabase, authentication, security and AI setup](supabase/README.md)
 - [Security/privacy boundaries](SECURITY.md)
 
