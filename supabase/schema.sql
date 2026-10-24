@@ -87,15 +87,23 @@ create table if not exists public.content_reports (
   -- Keep report history even if moderators later remove the reported content.
   design_id uuid,
   comment_id uuid,
+  -- A creator UUID is retained as a moderation target only; it is never public API output.
+  reported_user_id uuid,
   reason text not null check (reason in ('copied_work','harassment','spam','unsafe_content','privacy','other')),
   details text not null default '',
   status text not null default 'open' check (status in ('open','reviewed','dismissed')),
   created_at timestamptz not null default now(),
   resolved_by uuid references auth.users(id) on delete set null,
   resolved_at timestamptz,
-  constraint content_reports_one_target check ((design_id is not null) <> (comment_id is not null)),
+  constraint content_reports_one_target check (num_nonnulls(design_id, comment_id, reported_user_id) = 1),
   constraint content_reports_details_length check (char_length(details) <= 800)
 );
+
+-- Keep this schema re-runnable if a development project was created with an earlier draft.
+alter table public.content_reports add column if not exists reported_user_id uuid;
+alter table public.content_reports drop constraint if exists content_reports_one_target;
+alter table public.content_reports add constraint content_reports_one_target
+  check (num_nonnulls(design_id, comment_id, reported_user_id) = 1);
 
 create table if not exists public.activity_events (
   id bigint generated always as identity primary key,
@@ -104,7 +112,7 @@ create table if not exists public.activity_events (
     'sign_in','sign_out','design_created','design_updated','design_published',
     'design_made_private','design_deleted','design_liked','design_unliked',
     'comment_reported','comment_submitted','user_reported','design_reported','comment_moderated',
-    'ai_tryon_requested','ai_tryon_succeeded','ai_tryon_failed'
+    'ai_tryon_requested','ai_tryon_succeeded','ai_tryon_failed','user_banned','user_deleted'
   )),
   design_id uuid,
   metadata jsonb not null default '{}'::jsonb,
@@ -117,6 +125,7 @@ create index if not exists designs_visibility_created_idx on public.designs(visi
 create index if not exists public_designs_published_idx on public.public_designs(published_at desc);
 create index if not exists design_comments_design_time_idx on public.design_comments(design_id, created_at desc);
 create index if not exists content_reports_status_time_idx on public.content_reports(status, created_at desc);
+create index if not exists content_reports_target_user_idx on public.content_reports(reported_user_id, created_at desc) where reported_user_id is not null;
 create index if not exists content_reports_reporter_time_idx on public.content_reports(reporter_id, created_at desc);
 create index if not exists ai_tryon_jobs_user_time_idx on public.ai_tryon_jobs(user_id, created_at desc);
 create index if not exists activity_events_user_time_idx on public.activity_events(user_id, created_at desc);
