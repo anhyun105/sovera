@@ -499,7 +499,7 @@ async function toggleCloudLike(id,button){
 async function loadCloudComments(id){
  const list=$('#commentList');if(!list)return;
  list.textContent='Loading approved comments…';
- const {data,error}=await supabase.from('design_comments').select('display_name,body,created_at').eq('design_id',id).eq('moderation_status','visible').order('created_at',{ascending:true}).limit(50);
+ const {data,error}=await supabase.from('design_comments').select('id,display_name,body,created_at').eq('design_id',id).eq('moderation_status','visible').order('created_at',{ascending:true}).limit(50);
  if(error){list.textContent='Comments are temporarily unavailable.';return}
  if(!data?.length){list.textContent='No approved comments yet. New comments are reviewed before appearing publicly.';return}
  list.innerHTML='';
@@ -509,9 +509,11 @@ async function loadCloudComments(id){
   const textWrap=document.createElement('div');const name=document.createElement('strong');name.textContent=row.display_name||'Sovera creator';
   const body=document.createElement('p');body.textContent=row.body;body.style.margin='5px 0';
   const date=document.createElement('small');date.textContent=new Date(row.created_at).toLocaleDateString();
-  textWrap.append(name,body,date);item.append(dot,textWrap);list.append(item);
- }
-}
+  textWrap.append(name,body,date);
+  const report=document.createElement('button');report.className='comment-btn';report.textContent='Report comment';report.style.marginTop='6px';
+  report.addEventListener('click',()=>{activeReportType='comment';activeReportTargetId=row.id;$('#reportReason').value='harassment';$('#reportDetails').value='';openModal('reportModal')});
+  textWrap.append(report);item.append(dot,textWrap);list.append(item);
+ }}
 
 $('#unlockStudio').addEventListener('click',()=>openAuth('signup'));
 function goStudio(){if(!requireCreator())return;document.querySelector('#atelier').scrollIntoView({behavior:'smooth'})}
@@ -664,6 +666,16 @@ function bindCards(){
   });
  });
 }
+$('#sendReport').addEventListener('click',async()=>{
+ if(!supabase||!previewUser?.isCloud||!activeReportType||!activeReportTargetId){showToast('Sign in to the secure Sovera community to submit a report.');return}
+ const btn=$('#sendReport');btn.disabled=true;btn.textContent='Submitting…';
+ try{
+  const {data,error}=await supabase.functions.invoke('report-content',{body:{targetType:activeReportType,targetId:activeReportTargetId,reason:$('#reportReason').value,details:$('#reportDetails').value.trim()}});
+  if(error)throw error;
+  closeModals();showToast(data?.message||'Report received by moderators.');
+ }catch(error){console.error('Report failed:',error);showToast(error?.message||'Report could not be submitted. Is the reporting function deployed?')}
+ finally{btn.disabled=false;btn.textContent='Submit report ↗'}
+});
 $('#commentSend').addEventListener('click',async()=>{
  const body=$('#commentDraft').value.trim();if(!body){showToast('Write a short thought first.');return}
  if(supabase&&activeCommentDesignId&&previewUser?.isCloud){
