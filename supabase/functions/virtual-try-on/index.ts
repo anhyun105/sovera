@@ -108,6 +108,11 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "You have reached the limit of 5 AI try-on previews per hour. Please try again later." }, 429, origin);
     }
     jobId = reservation.job_id;
+    await adminClient.from("activity_events").insert({
+      user_id: user.id,
+      event_type: "ai_tryon_requested",
+      metadata: { source: "virtual_try_on" }
+    });
     // This is read through the user's own RLS-protected Storage session.
     const { data: file, error: downloadError } = await userClient.storage
       .from("design-assets")
@@ -172,6 +177,11 @@ Deno.serve(async (req) => {
       status: "succeeded",
       finished_at: new Date().toISOString()
     }).eq("id", jobId);
+    await adminClient.from("activity_events").insert({
+      user_id: user.id,
+      event_type: "ai_tryon_succeeded",
+      metadata: { source: "virtual_try_on" }
+    });
 
     return jsonResponse({
       imageDataUrl: "data:image/webp;base64," + generated,
@@ -183,6 +193,11 @@ Deno.serve(async (req) => {
         status: "failed",
         finished_at: new Date().toISOString()
       }).eq("id", jobId);
+      await adminClient.from("activity_events").insert({
+        user_id: user.id,
+        event_type: "ai_tryon_failed",
+        metadata: { source: "virtual_try_on" }
+      });
     }
     console.error("Sovera virtual try-on failed:", error instanceof Error ? error.message : "Unknown error");
     const message = error instanceof Error ? error.message : "The AI try-on could not be completed.";
