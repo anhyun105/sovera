@@ -6,7 +6,10 @@ verify_jwt = true
 [functions.admin-dashboard]
 verify_jwt = true
 
-[functions.moderate-comment]
+[functions.moderate-content]
+verify_jwt = true
+
+[functions.report-content]
 verify_jwt = true
 
 [functions.track-activity]
