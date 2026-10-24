@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
     ? body.details.replace(/[<>\u0000-\u001f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 800)
     : "";
 
-  if ((targetType !== "design" && targetType !== "comment") ||
+  if ((targetType !== "design" && targetType !== "comment" && targetType !== "creator") ||
       typeof targetId !== "string" || !uuidPattern.test(targetId) ||
       typeof reason !== "string" || !reasons.has(reason)) {
     return jsonResponse({ error: "Choose a valid report target and reason." }, 400, ctx.origin);
@@ -41,7 +41,17 @@ Deno.serve(async (req) => {
 
   let designId: string | null = null;
   let commentId: string | null = null;
-  if (targetType === "design") {
+  let reportedUserId: string | null = null;
+  if (targetType === "creator") {
+    const { data: publishedDesign, error: publishedError } = await ctx.adminClient
+      .from("public_designs").select("id").eq("id", targetId).maybeSingle();
+    if (publishedError || !publishedDesign) return jsonResponse({ error: "That public creator could not be verified." }, 404, ctx.origin);
+    const { data: sourceDesign, error: sourceError } = await ctx.adminClient
+      .from("designs").select("user_id").eq("id", targetId).eq("visibility", "public").maybeSingle();
+    if (sourceError || !sourceDesign) return jsonResponse({ error: "That public creator could not be verified." }, 404, ctx.origin);
+    if (sourceDesign.user_id === ctx.user.id) return jsonResponse({ error: "You cannot report your own account." }, 400, ctx.origin);
+    reportedUserId = sourceDesign.user_id;
+  } else if (targetType === "design") {
     const { data, error } = await ctx.adminClient.from("public_designs")
       .select("id").eq("id", targetId).maybeSingle();
     if (error || !data) return jsonResponse({ error: "That public design is no longer available." }, 404, ctx.origin);
@@ -58,6 +68,7 @@ Deno.serve(async (req) => {
     reporter_id: ctx.user.id,
     design_id: targetType === "design" ? designId : null,
     comment_id: commentId,
+    reported_user_id: reportedUserId,
     reason,
     details,
     status: "open"
@@ -70,7 +81,7 @@ Deno.serve(async (req) => {
 
   await ctx.adminClient.from("activity_events").insert({
     user_id: ctx.user.id,
-    event_type: targetType === "design" ? "design_reported" : "comment_reported",
+    event_type: targetType === "creator" ? "user_reported" : targetType === "design" ? "design_reported" : "comment_reported",
     design_id: designId,
     metadata: { reasonCategory: reason, source: "community" }
   });
