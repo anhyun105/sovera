@@ -59,9 +59,9 @@ Deno.serve(async (req) => {
   const openAiKey = Deno.env.get("OPENAI_API_KEY");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const publishableKeys = JSON.parse(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS") || "{}");
-  const publishableKey = publishableKeys.default || Deno.env.get("SUPABASE_ANON_KEY");
+  const publishableKey = publishableKeys.default || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY");
   const secretKeys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}");
-  const secretKey = secretKeys.default || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const secretKey = secretKeys.default || Deno.env.get("SOVERA_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
   if (!openAiKey || !supabaseUrl || !publishableKey || !secretKey) {
     return jsonResponse({ error: "AI try-on is not fully configured on the server." }, 503, origin);
@@ -97,27 +97,17 @@ Deno.serve(async (req) => {
 
   let jobId: number | null = null;
   try {
-    const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    await adminClient.from("ai_tryon_jobs").delete().lt("created_at", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString());
-    const { count, error: countError } = await adminClient
-      .from("ai_tryon_jobs")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .gte("created_at", cutoff);
-
-    if (countError) throw new Error("The AI rate limit could not be checked.");
-    if ((count || 0) >= 5) {
+    // The database function serializes per-user requests so parallel calls cannot bypass the limit.
+    const { data: reservationRows, error: reservationError } = await adminClient.rpc(
+      "reserve_ai_tryon_job",
+      { p_user_id: user.id }
+    );
+    if (reservationError) throw new Error("The AI usage limit could not be reserved.");
+    const reservation = Array.isArray(reservationRows) ? reservationRows[0] : reservationRows;
+    if (!reservation?.allowed) {
       return jsonResponse({ error: "You have reached the limit of 5 AI try-on previews per hour. Please try again later." }, 429, origin);
     }
-
-    const { data: job, error: jobError } = await adminClient
-      .from("ai_tryon_jobs")
-      .insert({ user_id: user.id, status: "requested" })
-      .select("id")
-      .single();
-    if (jobError) throw new Error("A secure AI usage record could not be created.");
-    jobId = job.id;
-
+    jobId = reservation.job_id;
     // This is read through the user's own RLS-protected Storage session.
     const { data: file, error: downloadError } = await userClient.storage
       .from("design-assets")
@@ -154,14 +144,14 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-image-2.5-flare",
+        model: "gpt-image-1.5",
         images: [{ image_url: dataUrl }],
         prompt,
         size: "1024x1536",
         quality: "medium",
         output_format: "webp",
         n: 1,
-        safety_identifier: safetyIdentifier
+        user: safetyIdentifier
       })
     });
 
