@@ -70,15 +70,21 @@ supabase login
 supabase link --project-ref YOUR_PROJECT_REF
 ```
 
-Set server-side secrets through the CLI (replace placeholders in your own terminal; do not paste real keys into chat, documentation or source code):
+Supabase provides its project URL and default publishable/secret keys to Edge Functions as server-side environment variables. Do not copy a secret key into the repository or browser code.
+
+After you create and verify your own account, add the owner-only lock through the CLI (use the exact Auth user UUID from **Authentication → Users**):
 
 ```bash
-supabase secrets set \
-  SOVERA_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co \
-  SOVERA_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY \
-  SOVERA_SERVICE_ROLE_KEY=YOUR_SERVER_SECRET_OR_SERVICE_ROLE_KEY \
-  OPENAI_API_KEY=YOUR_OPENAI_API_KEY
+supabase secrets set SOVERA_OWNER_USER_ID=YOUR_VERIFIED_AUTH_USER_UUID
 ```
+
+Only if you want AI photo try-on, add your OpenAI API key separately:
+
+```bash
+supabase secrets set OPENAI_API_KEY=YOUR_OPENAI_API_KEY
+```
+
+Keep these values inside your own Supabase project. Never paste them in a chat, public GitHub file, or browser JavaScript. The owner gate deliberately fails closed if `SOVERA_OWNER_USER_ID` is missing.
 
 Deploy the secured functions:
 
@@ -93,7 +99,7 @@ supabase functions deploy delete-my-account
 supabase functions deploy virtual-try-on
 ```
 
-The function configuration is in `config.toml`. Only `public-gallery` accepts unauthenticated requests because it exposes the public community feed, not private design data. All other functions require a valid signed-in session. The `admin-users` function is owner/admin-only and uses the Auth Admin API on the server to show registered users, verification/sign-in status, saved-design/comment/like counts, per-user event history and account suspension controls. Its aggregate RPC is granted only to `service_role`. Edge Function secrets must remain in Supabase server settings.
+The function configuration is in `config.toml`. Only `public-gallery` accepts unauthenticated requests because it exposes the public community feed, not private design data. All other functions require a valid signed-in session. The `admin-users` function is owner-only and uses the Auth Admin API on the server to show registered users, verification/sign-in status, saved-design/comment/like counts, per-user event history and account suspension controls. It checks both `SOVERA_OWNER_USER_ID` and the database `admin` role. Its aggregate RPC is granted only to `service_role`. Edge Function secrets must remain in Supabase server settings.
 
 ## 5. Connect the browser safely
 
@@ -110,7 +116,10 @@ The GitHub Pages workflow deploys automatically after every push to `main`. Chec
 
 ## 6. Configure an administrator account
 
-After creating/verifying the correct account in **Authentication → Users**, copy its exact user UUID. In Supabase SQL Editor, assign the role yourself:
+1. Sign up on Sovera using your own email **after** you configure the browser's public Supabase URL/key, then verify the email.
+2. Open **Supabase Dashboard → Authentication → Users**, select your verified account, and copy its exact UUID.
+3. In **Supabase Dashboard → Edge Function Secrets** (or use the CLI command in section 4), set `SOVERA_OWNER_USER_ID` to that UUID. This server-side secret is a separate, additional owner lock.
+4. In the SQL Editor, assign the matching UUID the `admin` role:
 
 ```sql
 insert into public.admin_roles (user_id, role)
@@ -118,7 +127,11 @@ values ('YOUR_VERIFIED_AUTH_USER_UUID', 'admin')
 on conflict (user_id) do update set role = excluded.role;
 ```
 
-Do not grant roles using client-side flags, a submitted email, local storage or a public signup form. The admin dashboard Edge Function checks `admin_roles` server-side. Moderators can review content; only an admin can suspend a reported creator.
+5. Sign out and sign back in to Sovera, open **My Atelier / dashboard**, and scroll to **Administrator overview → Registered account records**.
+
+Access is checked twice by server-side code: the session UUID must match `SOVERA_OWNER_USER_ID`, and that same UUID must have the `admin` role. If the owner secret is missing or doesn't match, admin access is denied. Do not give another person access to your Supabase project, your email account, or your GitHub write permissions; a trusted project administrator can change the server secret or database.
+
+Do not grant roles using a client-side flag, a submitted email or local storage. Account controls and moderation use the same owner gate. Regular users can only manage their own profile/designs and submit reports; they cannot list other accounts or open owner controls.
 
 ## 7. Privacy, public designs and AI photo try-on
 
