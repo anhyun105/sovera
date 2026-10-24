@@ -58,16 +58,30 @@ Deno.serve(async (req) => {
     return jsonResponse({ ok: true, message: "Comment moderation action completed." }, 200, ctx.origin);
   }
 
-  if (!["dismiss", "resolve", "take_down"].includes(action)) {
-    return jsonResponse({ error: "Use dismiss, resolve or take_down for a report." }, 400, ctx.origin);
+  if (!["dismiss", "resolve", "take_down", "suspend_7d"].includes(action)) {
+    return jsonResponse({ error: "Use dismiss, resolve, take_down or suspend_7d for a report." }, 400, ctx.origin);
   }
 
   const { data: report, error: reportError } = await ctx.adminClient
     .from("content_reports")
-    .select("id,design_id,comment_id,status")
+    .select("id,design_id,comment_id,reported_user_id,status")
     .eq("id", targetId).maybeSingle();
   if (reportError || !report) return jsonResponse({ error: "Report not found." }, 404, ctx.origin);
   affectedDesignId = report.design_id;
+
+  if (action === "suspend_7d") {
+    if (role !== "admin") return jsonResponse({ error: "Only an administrator can suspend an account." }, 403, ctx.origin);
+    if (!report.reported_user_id) return jsonResponse({ error: "This report is not for a creator account." }, 400, ctx.origin);
+    if (report.reported_user_id === ctx.user.id) return jsonResponse({ error: "You cannot suspend your own account through a report." }, 400, ctx.origin);
+    const { data: targetRole, error: roleError } = await ctx.adminClient
+      .from("admin_roles").select("role").eq("user_id", report.reported_user_id).maybeSingle();
+    if (roleError) return jsonResponse({ error: "Target account role could not be checked." }, 500, ctx.origin);
+    if (targetRole) return jsonResponse({ error: "Moderator/admin accounts require a separate owner review." }, 403, ctx.origin);
+    const { error: banError } = await ctx.adminClient.auth.admin.updateUserById(report.reported_user_id, {
+      ban_duration: "168h"
+    });
+    if (banError) return jsonResponse({ error: "The account could not be suspended." }, 500, ctx.origin);
+  }
 
   if (action === "take_down") {
     if (report.design_id) {
@@ -100,7 +114,7 @@ Deno.serve(async (req) => {
 
   await ctx.adminClient.from("activity_events").insert({
     user_id: ctx.user.id,
-    event_type: report.comment_id ? "comment_moderated" : "design_made_private",
+    event_type: report.reported_user_id ? (action === "suspend_7d" ? "user_banned" : "user_reported") : report.comment_id ? "comment_moderated" : "design_made_private",
     design_id: affectedDesignId,
     metadata: { action, source: "admin" }
   });
