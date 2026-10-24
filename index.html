@@ -39,6 +39,38 @@
 .dashboard-note{border-left:2px solid var(--gold);padding:11px 14px;background:#18130d;color:#a99b86;font-size:10px;line-height:1.8;margin-top:19px}.admin-panel{margin-top:22px;border:1px solid rgba(214,166,83,.4);background:#100d09;padding:24px}.admin-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}.admin-head h3{font:32px var(--serif);font-weight:500;margin:0}.admin-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.admin-metric{padding:15px;border:1px solid #382b1c;background:#15110c}.admin-metric strong{font:30px var(--serif);color:var(--gold2);display:block}.admin-metric span{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#a99b88}.admin-queue{margin-top:20px}.admin-queue h4{font:25px var(--serif);font-weight:500;margin:0 0 12px}.admin-item{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:14px 0;border-top:1px solid #34291c}.admin-item-body{min-width:0;flex:1}.admin-item-body strong{display:block;font:19px var(--serif);font-weight:500;overflow-wrap:anywhere}.admin-item-body p{font-size:11px;color:#b5a792;margin:6px 0;white-space:pre-wrap;overflow-wrap:anywhere}.admin-item-body small{font-size:9px;color:#887c6c}.admin-item-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.admin-item-actions button{border:1px solid #5a4428;background:#1b150d;color:#e8ce9a;padding:7px 9px;font-size:9px}.admin-item-actions button.danger{border-color:#67343a;color:#e7b2b2}
 @media(max-width:1000px){.navlinks{gap:16px}.studio-layout{grid-template-columns:190px minmax(0,1fr)}.right-tools{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.right-tools .tool-group{margin:0}.primary-save{max-width:240px}.materials-grid{grid-template-columns:repeat(2,1fr)}.design-image{height:260px}}@media(max-width:1000px){.dash-stats{grid-template-columns:repeat(2,1fr)}.dash-columns{grid-template-columns:1fr}}
 @media(max-width:760px){.wrap{width:calc(100% - 32px)}.topbar{height:70px;padding:0 16px}.brand{min-width:0}.brand-symbol{width:38px;height:38px;font-size:22px}.brand-name{font-size:22px}.navlinks{display:none;position:absolute;top:70px;left:0;right:0;background:#0b0907;padding:22px;border-bottom:1px solid var(--line);flex-direction:column;align-items:stretch;gap:15px}.navlinks.show{display:flex}.nav-actions .btn-quiet{display:none}.mobile-menu{display:block}.hero{padding:50px 0 65px}.hero-grid{grid-template-columns:1fr;gap:15px}.hero h1{font-size:72px}.hero-art{min-height:420px;width:min(100%,470px);margin:0 auto}.manifesto-inner{justify-content:center;text-align:center}.section{padding:72px 0}.section-head{display:block}.section-head p{margin-top:15px}.studio-layout{grid-template-columns:1fr}.tools-col{border-right:0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:repeat(2,1fr);gap:0 15px}.tool-group{margin-bottom:16px}.right-tools{grid-column:auto;border-left:0;border-top:1px solid var(--line);grid-template-columns:1fr}.stage{min-height:360px}.view-panel{min-height:360px;padding:18px}.gallery-grid{grid-template-columns:1fr 1fr}.design-image{height:230px}.principles{grid-template-columns:1fr}.principle{display:grid;grid-template-columns:45px 1fr;column-gap:14px}.principle-number{grid-row:span 2}.principle h3{margin:0}.principle p{margin-top:7px}.cta-band{margin:0 0 70px;padding:32px 24px;display:block}.cta-band .btn{margin-top:15px}.footer-links{flex-wrap:wrap}.footer-bottom{display:block}.footer-bottom span{display:block;margin:4px 0}}@media(max-width:440px){.hero h1{font-size:62px}.hero-art{min-height:340px}.gallery-grid{grid-template-columns:1fr}.design-image{height:320px}.materials-grid{grid-template-columns:1fr 1fr}.material-art{height:100px}.material-info{padding:11px}.material-info h3{font-size:21px}.studio-title b{font-size:22px}.tools-col{grid-template-columns:1fr 1fr}.studio-top{padding:14px}.section-head h2{font-size:47px}.hero-ctas .btn{width:100%}}
+
+.admin-users-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:14px 0 10px}
+.admin-users-toolbar input{flex:1;min-width:220px;max-width:100%;background:#17120d;border:1px solid #4a3822;color:#f6ebd8;padding:12px 13px;font:inherit;font-size:12px;border-radius:0}
+.admin-users-nav{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin:12px 0 16px;color:#b6a68f;font-size:10px}
+.admin-users-nav>div{display:flex;gap:10px;align-items:center}
+.admin-users-nav button,.admin-item-actions button{cursor:pointer}
+.admin-users-nav button:disabled{opacity:.35;cursor:not-allowed}
+.admin-user-record{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(180px,1fr) auto;gap:14px;align-items:center;padding:15px 0;border-top:1px solid #34291c}
+.admin-user-main,.admin-user-meta{min-width:0}
+.admin-user-main strong{display:block;font:20px var(--serif);font-weight:500;overflow-wrap:anywhere;color:#f0dfc2}
+.admin-user-main p{margin:5px 0;overflow-wrap:anywhere;color:#c4b39a;font-size:11px}
+.admin-user-main small,.admin-user-meta small{display:block;color:#8f826f;font-size:9px;line-height:1.8;overflow-wrap:anywhere}
+.admin-user-meta{color:#c4b39a;font-size:10px;line-height:1.8}
+.admin-status{display:inline-block;border:1px solid #65502f;padding:3px 7px;margin:0 4px 4px 0;text-transform:uppercase;font-size:8px;letter-spacing:.1em;color:#e6ca8d}
+.admin-status.status-suspended{border-color:#9a4d51;color:#ffd1cf}
+.admin-status.status-unverified{border-color:#71634d;color:#cfb992}
+.admin-user-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.admin-user-actions button{border:1px solid #5a4428;background:#1b150d;color:#e8ce9a;padding:8px 10px;font-size:9px;cursor:pointer}
+.admin-user-actions button.danger{border-color:#67343a;color:#e7b2b2}
+.admin-user-detail{padding:20px;margin-top:20px;border:1px solid #5a4428;background:#15110c}
+.admin-user-detail[hidden]{display:none}
+.admin-detail-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:15px 0}
+.admin-detail-stat{border:1px solid #382b1c;padding:12px;background:#100d09}
+.admin-detail-stat strong{font:24px var(--serif);color:var(--gold2);display:block}
+.admin-detail-stat span{font-size:8px;color:#a99b88;text-transform:uppercase;letter-spacing:.08em}
+.admin-detail-columns{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.admin-detail-section{min-width:0;margin-top:18px}
+.admin-detail-section h4{font:23px var(--serif);font-weight:500;margin:0 0 10px}
+.admin-record-line{padding:10px 0;border-top:1px solid #34291c;font-size:10px;color:#c6b59c;line-height:1.8;overflow-wrap:anywhere}
+.admin-record-line strong{display:block;color:#f0dfc2;font-size:12px;font-weight:500}
+.admin-record-line small{display:block;color:#8e806b;font-size:9px}
+@media(max-width:760px){.admin-user-record{grid-template-columns:1fr;gap:8px}.admin-user-actions{justify-content:flex-start}.admin-detail-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-detail-columns{grid-template-columns:1fr}.admin-user-detail{padding:13px}.admin-users-toolbar input{min-width:100%}}
 </style>
 </head>
 <body>
@@ -86,6 +118,17 @@
     <div class="admin-metric"><strong id="adminEvents">0</strong><span>Events · 24 hours</span></div>
     <div class="admin-metric"><strong id="adminAi">0</strong><span>AI try-ons · 24 hours</span></div>
    </div>
+   <div class="admin-queue admin-user-records">
+    <div class="admin-head"><div><div class="eyebrow">Owner control</div><h3 style="font-size:26px">Registered account records</h3></div><button class="btn" id="adminUsersExport">Export current page CSV ↓</button></div>
+    <p class="section-footnote">Search accounts by email, display name or account ID. Account records include sign-in status, join date, design/comment totals and recent activity. Passwords, tokens, raw measurements and private photos are never shown here.</p>
+    <div class="admin-users-toolbar"><input id="adminUserSearch" type="search" maxlength="120" placeholder="Search email, name or account ID…"><button class="btn btn-gold" id="adminUserSearchButton">Search accounts</button><button class="btn" id="adminUserSearchClear">Clear</button></div>
+    <div class="admin-users-nav"><span id="adminUsersStatus" role="status">Account records load after admin access is verified.</span><div><button id="adminUsersPrev" disabled>← Previous</button><span id="adminUsersPage">Page 1</span><button id="adminUsersNext" disabled>Next →</button></div></div>
+    <div id="adminUsersList" class="dash-empty">No account records loaded yet.</div>
+    <div id="adminUserDetail" class="admin-user-detail" hidden>
+     <div class="admin-head"><div><div class="eyebrow">Account record</div><h3 id="adminUserDetailTitle" style="font-size:26px">Creator details</h3></div><button class="btn" id="adminUserDetailClose">Back to accounts ↑</button></div>
+     <div id="adminUserDetailContent"></div>
+    </div>
+   </div>
    <div class="admin-queue"><h4>Comment moderation queue</h4><div id="adminComments" class="dash-empty">No pending comments loaded.</div></div>
    <div class="admin-queue"><h4>Open community reports</h4><div id="adminReportsQueue" class="dash-empty">No open reports loaded.</div></div>
    <div class="admin-queue"><h4>Recent activity</h4><div id="adminRecentEvents" class="dash-empty">No recent activity loaded.</div></div>
@@ -114,6 +157,7 @@ try { supabase = await connectSoveraSupabase(); } catch (error) { console.error(
 const $ = (s,root=document) => root.querySelector(s);
 const $$ = (s,root=document) => Array.from(root.querySelectorAll(s));
 let previewUser = null, supabaseSession = null, currentDesignId = null, activeCommentDesignId = null, activeReportType = null, activeReportTargetId = null, authMode = 'signup', activeView = '3d', garmentColor = '#7a233b', garmentMaterial = 'satin', garmentKind = 'gown', spinning = false, photoUrl = null, selectedPhotoFile = null, aiResultUrl = null, garmentGroup = null, renderer = null, scene = null, camera = null, modelRoot = null, drag = false, lastX = 0, lastY = 0, rotY = .15, rotX = -.05, zoom = 1;
+let adminUsersPage = 1, adminUsersQuery = '', adminUsersHasNext = false, adminUsersCache = [];
 const colorNames = {'#7a233b':'Burgundy','#d0a65c':'Champagne gold','#123f34':'Emerald','#202c48':'Midnight blue','#e5d8c3':'Ivory','#282522':'Charcoal','#9b6d85':'Mauve','#aa4d2f':'Terracotta'};
 const materialNames = {satin:'Liquid satin',velvet:'Royal velvet',linen:'Natural linen',organza:'Sheer organza',cotton:'Soft cotton',chiffon:'Chiffon',georgette:'Georgette',crepe:'Crepe',lace:'Embroidered lace',brocade:'Woven brocade',denim:'Denim',jersey:'Jersey knit'};
 const kindNames = {gown:'Couture gown',skirt:'Statement skirt',blouse:'Sculpted blouse',jacket:'Tailored jacket',trousers:'Wide-leg trousers',saree:'Saree silhouette',lehenga:'Lehenga',dress:'Day / cocktail dress',other:'Other concept'};
