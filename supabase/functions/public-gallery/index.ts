@@ -97,5 +97,5 @@ Deno.serve(async (req) => {
     });
   }
 
-  return respond({ designs, generatedAt: new Date().toISOString(), urlExpirySeconds: 300 }, 200, origin, true);
+  return respond({ designs, generatedAt: new Date().toISOString(), urlExpirySeconds: 900 }, 200, origin, true);
 });
