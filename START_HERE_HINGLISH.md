@@ -31,8 +31,9 @@
 - 2D drawing illustrative hai; 4D-style view turntable animation hai.
 - AI output, jab connect hoga, visual estimate hoga—real garment fit guarantee nahi.
 - Website screenshots ya external camera se copying ko 100% rok nahi sakti; watermark aur limited previews risk kam kar sakte hain.
-- Real Supabase project credentials aur server secrets abhi configure karne baaki hain. Isliye Owner account-record dashboard ka cloud data aur shared multi-user features abhi live/verified nahi maane ja sakte; code deployed hai, backend wiring owner setup ke baad hi active hogi.
+- Real Supabase project credentials, verified owner UUID aur `SOVERA_OWNER_USER_ID` server secret abhi configure karne baaki hain. Isliye Owner account-record dashboard ka cloud data aur shared multi-user features abhi live/verified nahi maane ja sakte; code deployed hai, backend wiring owner setup ke baad hi active hogi.
 
+Owner dashboard steps: [Owner Dashboard Setup (Hinglish)](OWNER_DASHBOARD_SETUP_HINGLISH.md)  
 Detailed guide: [Supabase backend setup](supabase/README.md)  
 Feature matrix: [FEATURE_STATUS.md](FEATURE_STATUS.md)  
 Privacy boundaries: [SECURITY.md](SECURITY.md)
