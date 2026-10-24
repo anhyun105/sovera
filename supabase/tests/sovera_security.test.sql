@@ -7,7 +7,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pg_catalog;
 
-select plan(19);
+select plan(23);
 
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.profiles'::regclass),
@@ -78,6 +78,22 @@ select ok(
 select ok(
   has_function_privilege('service_role', 'public.reserve_ai_tryon_job(uuid)', 'EXECUTE'),
   'AI rate-limit reservation is available to the server role'
+);
+select ok(
+  has_function_privilege('service_role', 'public.admin_user_summaries(uuid[])', 'EXECUTE'),
+  'account-record aggregation is available only through a trusted server role'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.admin_user_summaries(uuid[])', 'EXECUTE'),
+  'regular users cannot call administrator account aggregation'
+);
+select ok(
+  not has_column_privilege('anon', 'public.design_likes', 'user_id', 'SELECT'),
+  'public visitors cannot inspect which accounts liked a design'
+);
+select ok(
+  not has_column_privilege('anon', 'public.design_comments', 'user_id', 'SELECT'),
+  'public visitors cannot inspect internal comment author IDs'
 );
 select ok(
   not has_function_privilege('authenticated', 'public.reserve_ai_tryon_job(uuid)', 'EXECUTE'),
