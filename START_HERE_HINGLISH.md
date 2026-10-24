@@ -8,9 +8,9 @@
 Latest deployment successful hone ke baad yeh URL public access ke liye use karo. Agar browser mein purana version dikhe, hard refresh (Ctrl/Cmd + Shift + R) karo.
 
 ## Is prototype ko kaise test karein
-1. Home page aur Explore gallery guest ke roop mein dekho.
+1. Home page aur Explore gallery guest ke roop mein dekho. Guest mode view-only hai; studio controls, photo preview, like/comment ke liye preview profile chahiye.
 2. **Enter Atelier** click karo; preview profile ke liye naam aur email dalo. Ismein password mat dalo—ye real login nahi hai.
-3. Garment type, colour, material aur neckline change karo; 1D, 2D, 3D aur 4D-style tabs explore karo.
+3. Garment type, 12 material choices, colour, neckline, sleeves aur embellishment controls change karo; 1D, 2D, 3D aur 4D-style tabs explore karo.
 4. **Save concept** se local draft banao; **Publish to Explore** se current browser ke demo gallery mein card add karo.
 5. **Dashboard** mein current tab-session profile ke saved concepts dekho, concept open karo ya delete karo.
 6. Photo preview sirf local overlay hai; photo upload server par nahi hota.
