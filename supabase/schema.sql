@@ -264,9 +264,9 @@ revoke all on table public.profiles, public.designs, public.public_designs,
 
 grant select, insert, update, delete on table public.designs to authenticated;
 grant select, insert, update on table public.profiles to authenticated;
-grant select, insert, delete on table public.public_designs to authenticated;
+grant select, delete on table public.public_designs to authenticated;
+grant insert (id, title, caption, garment_type, display_color, preview_image_path, published_at) on table public.public_designs to authenticated;
 grant update (title, caption, garment_type, display_color, preview_image_path, published_at) on table public.public_designs to authenticated;
-grant select on table public.public_designs to authenticated;
 
 -- Only the design_id and safe aggregate count are visible, never the liking account UUID.
 grant select (design_id) on table public.design_likes to anon, authenticated;
