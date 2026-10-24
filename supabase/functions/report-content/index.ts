@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
   let designId: string | null = null;
   let commentId: string | null = null;
   if (targetType === "design") {
-    const { data, error } = await ctx.userClient.from("public_designs")
+    const { data, error } = await ctx.adminClient.from("public_designs")
       .select("id").eq("id", targetId).maybeSingle();
     if (error || !data) return jsonResponse({ error: "That public design is no longer available." }, 404, ctx.origin);
     designId = data.id;
