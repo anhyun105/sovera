@@ -105,6 +105,49 @@ alter table public.content_reports drop constraint if exists content_reports_one
 alter table public.content_reports add constraint content_reports_one_target
   check (num_nonnulls(design_id, comment_id, reported_user_id) = 1);
 
+-- Reserve an AI usage slot atomically. Concurrent requests for the same user serialize
+-- on a per-user advisory lock so parallel browser calls cannot bypass the hourly limit.
+create or replace function public.reserve_ai_tryon_slot(
+  p_user_id uuid,
+  p_max_per_hour integer default 5
+)
+returns bigint
+language plpgsql
+security definer
+set search_path = ''
+as $sovera$
+declare
+  recent_count integer;
+  reserved_id bigint;
+begin
+  if p_user_id is null or p_max_per_hour < 1 or p_max_per_hour > 10 then
+    raise exception 'Invalid AI usage reservation arguments';
+  end if;
+
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(p_user_id::text, 0)
+  );
+
+  delete from public.ai_tryon_jobs
+  where created_at < now() - interval '48 hours';
+
+  select count(*)::integer into recent_count
+  from public.ai_tryon_jobs
+  where user_id = p_user_id
+    and created_at >= now() - interval '1 hour';
+
+  if recent_count >= p_max_per_hour then
+    return null;
+  end if;
+
+  insert into public.ai_tryon_jobs(user_id, status)
+  values (p_user_id, 'requested')
+  returning id into reserved_id;
+
+  return reserved_id;
+end;
+$sovera$;
+
 create table if not exists public.activity_events (
   id bigint generated always as identity primary key,
   user_id uuid references auth.users(id) on delete set null,
@@ -589,6 +632,16 @@ end;
 $sovera$;
 revoke all on function public.reserve_ai_tryon_job(uuid) from public, anon, authenticated;
 grant execute on function public.reserve_ai_tryon_job(uuid) to service_role;
+
+-- Trigger functions are invoked by their triggers, not by direct client RPC calls.
+-- Revoke default PUBLIC execution to avoid exposing SECURITY DEFINER helpers as RPC endpoints.
+revoke all on function public.set_updated_at() from public, anon, authenticated;
+revoke all on function public.set_public_design_creator() from public, anon, authenticated;
+revoke all on function public.remove_preview_for_private_design() from public, anon, authenticated;
+revoke all on function public.refresh_public_design_like_count() from public, anon, authenticated;
+revoke all on function public.set_comment_display_name() from public, anon, authenticated;
+revoke all on function public.reserve_ai_tryon_slot(uuid, integer) from public, anon, authenticated;
+grant execute on function public.reserve_ai_tryon_slot(uuid, integer) to service_role;
 
 -- Assign administrator roles only from the Supabase SQL Editor after verifying auth.users.id.
 -- A trusted Edge Function must read admin_roles; never trust a client role flag.
