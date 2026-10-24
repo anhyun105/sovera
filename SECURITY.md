@@ -12,7 +12,7 @@ In preview mode, the signup form creates only a tab-local preview profile. Saved
 - The public Explore feed is served through `public-gallery`, which returns selected metadata and time-limited signed URLs only for explicitly published watermarked previews.
 - `design-assets` and `public-design-previews` are private Storage buckets. Never change either bucket to public.
 - Comments begin as pending; a trusted moderator must approve them.
-- Reports, admin roles, audit events and AI usage records are server-only. The browser must never access a Supabase secret/service-role key.
+- Reports, admin roles, audit events and AI usage records are server-only. The `admin-users` Edge Function lists Auth accounts and combines them with aggregate design/comment/like/activity counts; it can show per-user design titles, comment states and event history without returning source measurements or private photos. The owner-only UI can export the loaded account page to CSV and suspend/lift sign-in bans. The browser must never access a Supabase secret/service-role key.
 - AI photo editing is available only after explicit consent, uses temporary private upload, validates file type/size and reserves a maximum of five requests per account per hour. Provider terms/safety review/retention can still apply.
 - Self-service account deletion removes user-owned Storage assets before deleting the Auth account and cascaded database records.
 - Public creator/user identifiers are not intentionally returned in the public feed or likes API. Administrative logs contain allowlisted operational metadata only.
