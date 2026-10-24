@@ -102,7 +102,9 @@ create table if not exists public.activity_events (
   user_id uuid references auth.users(id) on delete set null,
   event_type text not null check (event_type in (
     'sign_in','sign_out','design_created','design_updated','design_published',
-    'design_made_private','design_deleted','comment_reported','comment_submitted','user_reported','design_reported','comment_moderated'
+    'design_made_private','design_deleted','design_liked','design_unliked',
+    'comment_reported','comment_submitted','user_reported','design_reported','comment_moderated',
+    'ai_tryon_requested','ai_tryon_succeeded','ai_tryon_failed'
   )),
   design_id uuid,
   metadata jsonb not null default '{}'::jsonb,
@@ -377,6 +379,15 @@ begin
   from public.design_likes l where l.design_id = p_design_id;
 
   update public.public_designs p set like_count = v_count where p.id = p_design_id;
+
+  insert into public.activity_events (user_id, event_type, design_id, metadata)
+  values (
+    v_user_id,
+    case when v_liked then 'design_liked' else 'design_unliked' end,
+    p_design_id,
+    jsonb_build_object('source', 'community')
+  );
+
   return query select v_liked, v_count;
 end;
 $sovera$;
