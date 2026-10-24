@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-image-2.5-flare",
+        model: "gpt-image-1.5",
         images: [{ image_url: dataUrl }],
         prompt,
         size: "1024x1536",
