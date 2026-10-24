@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
 
   if (eventType === "design_reported" || eventType === "comment_reported" || eventType === "comment_submitted") {
     if (!designId) return jsonResponse({ error: "A public design ID is required for this report event." }, 400, ctx.origin);
-    const { data, error } = await ctx.userClient
+    const { data, error } = await ctx.adminClient
       .from("public_designs").select("id").eq("id", designId).maybeSingle();
     if (error || !data) return jsonResponse({ error: "Public design could not be verified." }, 404, ctx.origin);
   }
