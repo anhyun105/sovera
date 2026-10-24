@@ -84,8 +84,9 @@ create table if not exists public.ai_tryon_jobs (
 create table if not exists public.content_reports (
   id uuid primary key default gen_random_uuid(),
   reporter_id uuid not null references auth.users(id) on delete cascade,
-  design_id uuid references public.public_designs(id) on delete cascade,
-  comment_id uuid references public.design_comments(id) on delete cascade,
+  -- Keep report history even if moderators later remove the reported content.
+  design_id uuid,
+  comment_id uuid,
   reason text not null check (reason in ('copied_work','harassment','spam','unsafe_content','privacy','other')),
   details text not null default '',
   status text not null default 'open' check (status in ('open','reviewed','dismissed')),
