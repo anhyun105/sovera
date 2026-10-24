@@ -1,5 +1,8 @@
 project_id = "replace-with-your-supabase-project-ref"
 
+[functions.public-gallery]
+verify_jwt = false
+
 [functions.virtual-try-on]
 verify_jwt = true
 
