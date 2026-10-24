@@ -23,7 +23,7 @@ Statuses below distinguish code that exists from services actually activated in 
 | Shared likes | Code ready, inactive | Uses an atomic RPC to toggle a user's like and maintain a count. Needs schema/function configuration and tests. |
 | Shared comments and moderation | Code ready, inactive | New comments are pending until a moderator approves them. Needs deployed functions and an assigned admin/moderator. |
 | Content and creator reports | Code ready, inactive | Includes reports for designs, comments and creators; moderation code supports takedown and admin-only 7-day account suspension. Requires backend deployment and testing. |
-| Admin dashboard and activity analytics | Code ready, inactive | Server-only metrics/audit log; requires an assigned administrator and deployed Edge Functions. It intentionally avoids collecting photos or full design JSON in analytics. |
+| Owner/admin dashboard, account records and activity analytics | Code ready, inactive | Metrics plus searchable Auth accounts, verification status, join/last-sign-in, design/comment/like counts, per-user recent events, CSV export, and 7-day suspend/lift controls. Only the server-verified admin role can access it; requires Supabase credentials, the latest migration, deployed `admin-users`/`admin-dashboard` functions, and an assigned admin UUID. Passwords, tokens, original photos and raw measurements are not exposed. |
 | Account deletion | Code ready, inactive | Function removes stored original assets/previews, then deletes the Auth user and cascading database rows. Requires live backend, permissions and a deletion test. |
 | Local photo overlay | Implemented | A local label overlay on the selected photo; no garment warp/fit engine. |
 | AI photo outfit editing | Code ready, inactive | Consent-gated server function using OpenAI image edit, with a per-account rate limit and temporary-upload cleanup. Requires OpenAI API access/key and deployed Supabase functions. Generated output is a visual estimate, not a fit guarantee. |
@@ -36,7 +36,7 @@ Statuses below distinguish code that exists from services actually activated in 
 3. Configure `supabase-config.js` with only the public Supabase URL and publishable key.
 4. Set server secrets in Supabase (never in GitHub or browser source): `SOVERA_SUPABASE_URL`, `SOVERA_SUPABASE_PUBLISHABLE_KEY`, `SOVERA_SERVICE_ROLE_KEY`, and, only if AI try-on is wanted, `OPENAI_API_KEY`.
 5. Deploy all functions listed in `supabase/config.toml`.
-6. Assign an admin UUID in Supabase SQL Editor after verifying the account.
+6. Assign an admin UUID in Supabase SQL Editor after verifying the account; then test the Owner dashboard's searchable Account Records, user detail history, CSV export and suspend/lift controls.
 7. Test two separate users for private-row access, private Storage access, publish/unpublish, likes, pending comments, reports, account deletion and AI rate limits.
 8. Configure privacy notice/consent, retention, backups, CAPTCHA, SMTP, cost limits and monitoring before advertising the service publicly.
 
