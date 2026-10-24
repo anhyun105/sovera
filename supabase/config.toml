@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.track-activity]
 verify_jwt = true
+
+[functions.delete-my-account]
+verify_jwt = true
