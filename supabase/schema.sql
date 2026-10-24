@@ -434,7 +434,7 @@ drop policy if exists "User likes as self on public design" on public.design_lik
 create policy "User likes as self on public design" on public.design_likes
 for insert to authenticated with check (
   (select auth.uid()) = user_id
-  and exists (select 1 from public.public_designs p where p.id = design_likes.design_id)
+  and public.is_public_design(design_likes.design_id)
 );
 
 drop policy if exists "User removes own like" on public.design_likes;
@@ -457,7 +457,7 @@ create policy "Submit pending comment on public design" on public.design_comment
 for insert to authenticated with check (
   (select auth.uid()) = user_id
   and moderation_status = 'pending'
-  and exists (select 1 from public.public_designs p where p.id = design_comments.design_id)
+  and public.is_public_design(design_comments.design_id)
 );
 
 drop policy if exists "User deletes own comment" on public.design_comments;
@@ -526,9 +526,11 @@ declare
   v_count integer;
   v_job_id bigint;
 begin
-  if auth.uid() is distinct from p_user_id then
-    raise exception 'Authenticated user mismatch';
+  if p_user_id is null then
+    raise exception 'User ID is required';
   end if;
+  -- This function is executable only by service_role. The Edge Function validates
+  -- the user JWT before calling it, so auth.uid() is intentionally not used here.
   perform pg_advisory_xact_lock(hashtextextended(p_user_id::text || ':sovera-ai', 0));
   select count(*)::integer into v_count
   from public.ai_tryon_jobs j
