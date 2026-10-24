@@ -533,7 +533,25 @@ drop policy if exists "Owner uploads own public preview" on storage.objects;
 create policy "Owner uploads own public preview" on storage.objects
 for insert to authenticated with check (
   bucket_id = 'public-design-previews'
-  and (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
+  and (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+  and exists (
+    select 1 from public.designs d
+    where d.id = ((storage.foldername(name))[1])::uuid
+      and d.user_id = (select auth.uid())
+  )
+);
+
+drop policy if exists "Owner deletes own public preview" on storage.objects;
+create policy "Owner deletes own public preview" on storage.objects
+for delete to authenticated using (
+  bucket_id = 'public-design-previews'
+  and (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+  and exists (
+    select 1 from public.designs d
+    where d.id = ((storage.foldername(name))[1])::uuid
+      and d.user_id = (select auth.uid())
+  )
+);
 
 -- Atomic per-user reservation: at most five AI requests in any rolling hour.
 create or replace function public.reserve_ai_tryon_job(p_user_id uuid)
