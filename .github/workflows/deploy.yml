@@ -22,13 +22,15 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Check out website
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+      - name: Validate HTML and JavaScript
+        run: python3 scripts/validate-site.py
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
       - name: Upload static website
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: .
       - name: Publish website
