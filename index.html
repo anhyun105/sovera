@@ -83,7 +83,7 @@
 <footer class="footer"><div class="wrap"><div class="footer-top"><a class="brand" href="#home"><div class="brand-symbol">SV</div><div><div class="brand-name">SOVERA</div><div class="brand-tag">Value your Soul</div></div></a><div class="footer-links"><a href="#atelier">Atelier</a><a href="#materials">Materials</a><a href="#explore">Explore</a><a href="#philosophy">Our philosophy</a><button class="btn btn-quiet" id="privacyInfo" style="padding:4px">Privacy note</button></div></div><div class="footer-bottom"><span>© 2026 Sovera. Value your Soul.</span><span>A creative prototype · Not a production garment engineering tool.</span></div></div></footer>
 <div class="modal-backdrop" id="authModal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle"><button class="modal-close" data-close aria-label="Close">×</button><div class="brand"><div class="brand-symbol">SV</div><div><div class="brand-name">SOVERA</div><div class="brand-tag">Value your Soul</div></div></div><div class="eyebrow" style="margin-top:28px" id="authEyebrow">Your private atelier awaits</div><h2 id="authTitle">Begin your<br><span class="gold">own chapter.</span></h2><p id="authIntro">Create a local preview profile to explore the studio controls.</p><p class="demo-warning">Preview mode: this form does not verify email or create a real account. Do not enter a password. Real authentication and secure cloud data need a configured backend.</p><form id="authForm"><label for="authName" id="authNameLabel">Your name</label><input id="authName" name="name" autocomplete="name" placeholder="How should we call you?"><label for="authEmail">Email address</label><input id="authEmail" type="email" name="email" required autocomplete="email" placeholder="you@example.com"><div id="cloudPasswordWrap" hidden></div><p class="demo-warning" id="authInfo">No password is needed here. This temporary profile is only for exploring the demo and is not a real Sovera account.</p><button class="btn btn-gold" id="authSubmit" type="submit">Continue into Sovera ↗</button></form><button class="form-switch" id="switchAuth">Already have a preview profile? Sign in</button></section></div>
 <div class="modal-backdrop" id="photoModal"><section class="modal"><button class="modal-close" data-close aria-label="Close">×</button><div class="eyebrow">Local photo preview</div><h2>Your look,<br><span class="gold">your perspective.</span></h2><p>Your selected photo is used only in this browser session for this prototype. It is not uploaded to a server.</p><div id="photoPreview" style="max-height:360px;overflow:hidden;position:relative;background:#090807;text-align:center"></div><button class="btn btn-gold" id="closePhoto">Close preview</button></section></div>
-<div class="modal-backdrop" id="commentModal"><section class="modal"><button class="modal-close" data-close aria-label="Close">×</button><div class="eyebrow">Community preview</div><h2 id="commentTitle">A concept worth discussing.</h2><p>Community comments are a visual prototype. Sign-in, moderation and shared cloud storage need to be configured before real public discussions.</p><label for="commentDraft">Your thoughts</label><textarea id="commentDraft" rows="3" placeholder="Share a kind, constructive thought..."></textarea><button class="btn btn-gold" id="commentSend">Preview comment ↗</button></section></div>
+<div class="modal-backdrop" id="commentModal"><section class="modal"><button class="modal-close" data-close aria-label="Close">×</button><div class="eyebrow">Community preview</div><h2 id="commentTitle">A concept worth discussing.</h2><p>New comments are reviewed before appearing publicly. In preview mode, comments are not shared with other users.</p><div id="commentList" style="max-height:190px;overflow:auto;margin:12px 0"></div><label for="commentDraft">Your thoughts</label><textarea id="commentDraft" rows="3" placeholder="Share a kind, constructive thought..."></textarea><button class="btn btn-gold" id="commentSend">Preview comment ↗</button></section></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>window.setTimeout(()=>document.getElementById("loader")?.classList.add("hidden"),4500);</script>
 <script type="module">
@@ -327,7 +327,7 @@ async function saveCloudDesign(visibility,design){
   if(uploadError)throw uploadError;
   const publicRow={id,title:record.title,caption:'',garment_type:design.kind,display_color:design.color,preview_image_path:uploadedPath,published_at:new Date().toISOString()};
   if(oldPreview?.preview_image_path){
-   const {error:updateError}=await supabase.from('public_designs').update(publicRow).eq('id',id);
+   const {error:updateError}=await supabase.from('public_designs').update({title:publicRow.title,caption:publicRow.caption,garment_type:publicRow.garment_type,display_color:publicRow.display_color,preview_image_path:publicRow.preview_image_path,published_at:publicRow.published_at}).eq('id',id);
    if(updateError)throw updateError;
   }else{
    const {error:insertError}=await supabase.from('public_designs').insert(publicRow);
@@ -448,7 +448,7 @@ if(supabase){
  });
  const {data,error}=await supabase.auth.getSession();
  if(error){console.error('Supabase session check failed:',error);showToast('Cloud authentication is configured but unavailable.')}
- else if(data.session)await activateCloudSession(data.session);
+ else if(data.session)await activateCloudSession(data.session);else await loadCloudGallery();
  $('#authInfo').textContent='Secure account mode is configured. The backend schema and email redirect settings must also be applied before production use.';
 }else{
  try{previewUser=JSON.parse(sessionStorage.getItem('sovera-preview-session')||'null')}catch(_){previewUser=null}
@@ -502,8 +502,40 @@ $('#publishDesign').addEventListener('click',()=>saveDesign('public'));
 function renderUserDesign(d){const gallery=$('#gallery');const card=document.createElement('article');card.className='design-card';const img=document.createElement('div');img.className='design-image';img.style.background='radial-gradient(ellipse at 50% 35%,'+d.color+',#100d0a 70%)';img.innerHTML='<span class="design-label">Community preview</span><div style="height:100%;display:grid;place-items:center;color:#e3c17c;font:72px Georgia,serif">SV</div>';const info=document.createElement('div');info.className='design-card-info';const h=document.createElement('h3');h.textContent=d.name;const who=document.createElement('div');who.className='designer-line';who.textContent='By '+d.owner+' · Local preview';const actions=document.createElement('div');actions.className='card-actions';actions.innerHTML='<button class="like-btn">♡ <span>0</span> appreciations</button><button class="comment-btn">View concept</button>';info.append(h,who,actions);card.append(img,info);gallery.prepend(card);bindCards()}
 $('#photoInput').addEventListener('change',e=>{if(!requireCreator()){e.target.value='';return}const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){showToast('Please select an image file.');return}if(file.size>12*1024*1024){showToast('Choose a photo under 12 MB.');return}if(photoUrl)URL.revokeObjectURL(photoUrl);photoUrl=URL.createObjectURL(file);$('#photoPreview').innerHTML='';const img=document.createElement('img');img.src=photoUrl;img.alt='Local photo try-on preview';img.style.cssText='max-height:330px;max-width:100%;object-fit:contain;display:block;margin:auto';const overlay=document.createElement('div');overlay.textContent=kindNames[garmentKind];overlay.style.cssText='position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);padding:12px 18px;border:1px solid rgba(236,191,109,.8);background:'+garmentColor+'88;color:#fff;font:25px Georgia,serif;text-shadow:0 2px 7px #000';$('#photoPreview').append(img,overlay);$('#photoMsg').textContent='Photo selected locally: '+file.name;openModal('photoModal')});
 $('#closePhoto').addEventListener('click',()=>{closeModals();$('#photoInput').value='';if(photoUrl){URL.revokeObjectURL(photoUrl);photoUrl=null}$('#photoPreview').innerHTML='';$('#photoMsg').textContent='Preview closed. Photo was not uploaded.'});
-function bindCards(){$$('.like-btn').forEach(b=>{if(b.dataset.bound)return;b.dataset.bound='1';b.addEventListener('click',()=>{if(!previewUser){openAuth('signup');showToast('Sign in to appreciate a design.');return}const liked=b.classList.toggle('liked');b.firstChild.textContent=liked?'♥ ':'♡ ';const span=$('span',b);if(span)span.textContent=String(Math.max(0,Number(span.textContent)+(liked?1:-1)));showToast(liked?'Appreciation added in this local preview.':'Appreciation removed.')})});$$('.comment-btn').forEach(b=>{if(b.dataset.bound)return;b.dataset.bound='1';b.addEventListener('click',()=>{if(!previewUser){openAuth('signup');showToast('Sign in to join the conversation.');return}const card=b.closest('.design-card');$('#commentTitle').textContent=$('h3',card)?.textContent||'Concept discussion';$('#commentDraft').value='';openModal('commentModal')})})}
-$('#commentSend').addEventListener('click',()=>{if(!$('#commentDraft').value.trim()){showToast('Write a short thought first.');return}closeModals();showToast('Comment preview only — not shared publicly.')});
+function bindCards(){
+ $$('.like-btn').forEach(b=>{
+  if(b.dataset.bound)return;b.dataset.bound='1';
+  b.addEventListener('click',async()=>{
+   const cloudId=b.dataset.cloudDesignId;
+   if(cloudId&&supabase){await toggleCloudLike(cloudId,b);return}
+   if(!previewUser){openAuth('signup');showToast('Sign in to appreciate a design.');return}
+   const liked=b.classList.toggle('liked');b.firstChild.textContent=liked?'♥ ':'♡ ';
+   const span=$('span',b);if(span)span.textContent=String(Math.max(0,Number(span.textContent)+(liked?1:-1)));
+   showToast(liked?'Appreciation added in this local preview.':'Appreciation removed.');
+  });
+ });
+ $$('.comment-btn').forEach(b=>{
+  if(b.dataset.bound)return;b.dataset.bound='1';
+  b.addEventListener('click',async()=>{
+   if(!previewUser){openAuth('signup');showToast('Sign in to join the conversation.');return}
+   const card=b.closest('.design-card');$('#commentTitle').textContent=$('h3',card)?.textContent||'Concept discussion';
+   activeCommentDesignId=b.dataset.cloudDesignId||null;$('#commentDraft').value='';
+   const list=$('#commentList');list.textContent='';
+   if(activeCommentDesignId&&supabase&&previewUser.isCloud){await loadCloudComments(activeCommentDesignId)}
+   else list.textContent='Preview discussion only. Your message will not be shared publicly.';
+   openModal('commentModal');
+  });
+ });
+}
+$('#commentSend').addEventListener('click',async()=>{
+ const body=$('#commentDraft').value.trim();if(!body){showToast('Write a short thought first.');return}
+ if(supabase&&activeCommentDesignId&&previewUser?.isCloud){
+  const {error}=await supabase.from('design_comments').insert({design_id:activeCommentDesignId,user_id:previewUser.id,body,moderation_status:'pending'});
+  if(error){showToast(error.message||'Could not submit the comment.');return}
+  closeModals();showToast('Comment submitted for review before public display.');return;
+ }
+ closeModals();showToast('Comment preview only — not shared publicly.');
+});
 $('#privacyInfo').addEventListener('click',()=>showToast('Demo mode stores preview profiles and designs in this browser only; it is not secure cloud authentication.'));
 bindCards();init3d();updateReadouts();
 </script>
