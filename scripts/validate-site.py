@@ -17,9 +17,12 @@ class SiteParser(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.ids = set()
         self.duplicates = []
+        self.missing_alt = []
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         item_id = attrs.get("id")
+        if tag == "img" and not attrs.get("alt", "").strip():
+            self.missing_alt.append("img")
         if item_id:
             if item_id in self.ids:
                 self.duplicates.append(item_id)
@@ -28,16 +31,25 @@ class SiteParser(HTMLParser):
 parser = SiteParser()
 parser.feed(source)
 parser.close()
+
 if parser.duplicates:
     raise SystemExit("ERROR: duplicate HTML id(s): " + ", ".join(sorted(set(parser.duplicates))))
+if parser.missing_alt:
+    raise SystemExit("ERROR: every content image needs alt text")
 
 required_ids = [
     "home", "atelier", "garmentCanvas", "dashboard", "materials",
-    "explore", "authModal", "saveDesign", "publishDesign"
+    "explore", "authModal", "saveDesign", "publishDesign", "studioLock"
 ]
 missing = [item for item in required_ids if item not in parser.ids]
 if missing:
     raise SystemExit("ERROR: required website element(s) missing: " + ", ".join(missing))
+if source.count('data-material="') < 12:
+    raise SystemExit("ERROR: expected at least 12 selectable material options")
+if 'id="embroidery"' not in source:
+    raise SystemExit("ERROR: garment embellishment control is missing")
+if 'type="password"' in source or "type='password'" in source:
+    raise SystemExit("ERROR: a prototype-only site must not collect passwords")
 
 match = re.search(r'<script\s+type=["\']module["\']\s*>(.*?)</script\s*>', source, re.I | re.S)
 if not match:
@@ -52,4 +64,4 @@ with tempfile.NamedTemporaryFile("w", suffix=".mjs", encoding="utf-8") as js_fil
         print(result.stderr)
         raise SystemExit("ERROR: JavaScript syntax check failed")
 
-print(f"OK: parsed index.html; checked {len(parser.ids)} unique IDs; JavaScript syntax passed.")
+print(f"OK: parsed index.html; checked {len(parser.ids)} unique IDs, alt text, guest lock, 12 fabrics and passwordless preview; JavaScript syntax passed.")
