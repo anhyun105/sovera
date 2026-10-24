@@ -23,7 +23,7 @@ function respond(body: unknown, status: number, origin: string) {
 }
 
 async function listAllObjectPaths(
-  admin: ReturnType<typeof createClient>,
+  admin: any,
   bucket: string,
   prefix: string,
   maxFiles: number
