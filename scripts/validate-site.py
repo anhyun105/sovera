@@ -36,7 +36,7 @@ if parser.duplicates:
     raise SystemExit("ERROR: duplicate HTML id(s): " + ", ".join(sorted(set(parser.duplicates))))
 if parser.missing_alt:
     raise SystemExit("ERROR: every content image needs alt text")
-if re.search(r"\${3,}\\(", source):
+if re.search(r"\${3,}\(", source):
     raise SystemExit("ERROR: malformed multi-selector helper call detected")
 if re.search(r"(?<!\$)\$\([^)]*\)\.(forEach|map|filter|find|some|every|reduce)", source):
     raise SystemExit("ERROR: a single-element query helper is being used as a collection")
