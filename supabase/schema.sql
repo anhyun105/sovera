@@ -73,6 +73,14 @@ create table if not exists public.admin_roles (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.ai_tryon_jobs (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  status text not null default 'requested' check (status in ('requested','succeeded','failed')),
+  created_at timestamptz not null default now(),
+  finished_at timestamptz
+);
+
 create table if not exists public.activity_events (
   id bigint generated always as identity primary key,
   user_id uuid references auth.users(id) on delete set null,
@@ -90,6 +98,7 @@ create index if not exists designs_owner_updated_idx on public.designs(user_id, 
 create index if not exists designs_visibility_created_idx on public.designs(visibility, created_at desc);
 create index if not exists public_designs_published_idx on public.public_designs(published_at desc);
 create index if not exists design_comments_design_time_idx on public.design_comments(design_id, created_at desc);
+create index if not exists ai_tryon_jobs_user_time_idx on public.ai_tryon_jobs(user_id, created_at desc);
 create index if not exists activity_events_user_time_idx on public.activity_events(user_id, created_at desc);
 create index if not exists activity_events_time_idx on public.activity_events(created_at desc);
 
@@ -227,15 +236,17 @@ alter table public.design_likes enable row level security;
 alter table public.design_comments enable row level security;
 alter table public.admin_roles enable row level security;
 alter table public.activity_events enable row level security;
+alter table public.ai_tryon_jobs enable row level security;
 
 -- Privileges AND row policies are required; RLS alone does not remove table grants.
 revoke all on table public.profiles, public.designs, public.public_designs,
   public.design_likes, public.design_comments, public.admin_roles,
-  public.activity_events from anon, authenticated;
+  public.activity_events, public.ai_tryon_jobs from anon, authenticated;
 
 grant select, insert, update, delete on table public.designs to authenticated;
 grant select, insert, update on table public.profiles to authenticated;
 grant select, insert, delete on table public.public_designs to authenticated;
+grant update (title, caption, garment_type, display_color, preview_image_path, published_at) on table public.public_designs to authenticated;
 grant select on table public.public_designs to anon;
 
 -- Only the design_id and safe aggregate count are visible, never the liking account UUID.
@@ -287,6 +298,26 @@ for select to anon, authenticated using (true);
 drop policy if exists "Owner publishes own preview of public design" on public.public_designs;
 create policy "Owner publishes own preview of public design" on public.public_designs
 for insert to authenticated with check (
+  exists (
+    select 1 from public.designs d
+    where d.id = public_designs.id
+      and d.user_id = (select auth.uid())
+      and d.visibility = 'public'
+  )
+);
+
+drop policy if exists "Owner updates own public preview" on public.public_designs;
+create policy "Owner updates own public preview" on public.public_designs
+for update to authenticated
+using (
+  exists (
+    select 1 from public.designs d
+    where d.id = public_designs.id
+      and d.user_id = (select auth.uid())
+      and d.visibility = 'public'
+  )
+)
+with check (
   exists (
     select 1 from public.designs d
     where d.id = public_designs.id
