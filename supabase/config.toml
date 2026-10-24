@@ -9,6 +9,9 @@ verify_jwt = true
 [functions.admin-dashboard]
 verify_jwt = true
 
+[functions.admin-users]
+verify_jwt = true
+
 [functions.moderate-content]
 verify_jwt = true
 
