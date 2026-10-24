@@ -112,7 +112,7 @@ create table if not exists public.activity_events (
     'sign_in','sign_out','design_created','design_updated','design_published',
     'design_made_private','design_deleted','design_liked','design_unliked',
     'comment_reported','comment_submitted','user_reported','design_reported','comment_moderated',
-    'ai_tryon_requested','ai_tryon_succeeded','ai_tryon_failed','user_banned','user_deleted'
+    'ai_tryon_requested','ai_tryon_succeeded','ai_tryon_failed','user_banned','user_unbanned','user_deleted'
   )),
   design_id uuid,
   metadata jsonb not null default '{}'::jsonb,
@@ -129,6 +129,7 @@ create index if not exists content_reports_target_user_idx on public.content_rep
 create index if not exists content_reports_reporter_time_idx on public.content_reports(reporter_id, created_at desc);
 create index if not exists ai_tryon_jobs_user_time_idx on public.ai_tryon_jobs(user_id, created_at desc);
 create index if not exists activity_events_user_time_idx on public.activity_events(user_id, created_at desc);
+create index if not exists design_likes_user_time_idx on public.design_likes(user_id, created_at desc);
 create index if not exists activity_events_time_idx on public.activity_events(created_at desc);
 
 create or replace function public.set_updated_at()
@@ -601,6 +602,54 @@ revoke all on function public.set_public_design_creator() from public, anon, aut
 revoke all on function public.remove_preview_for_private_design() from public, anon, authenticated;
 revoke all on function public.refresh_public_design_like_count() from public, anon, authenticated;
 revoke all on function public.set_comment_display_name() from public, anon, authenticated;
+
+
+-- Admin-only aggregate snapshot for the owner dashboard. Full design_data and photo paths
+-- are intentionally excluded. This function is callable only by server-side service_role.
+create or replace function public.admin_user_summaries(p_user_ids uuid[])
+returns table (
+  user_id uuid,
+  display_name text,
+  handle text,
+  profile_created_at timestamptz,
+  design_count bigint,
+  public_design_count bigint,
+  comment_count bigint,
+  like_count bigint,
+  activity_count bigint,
+  last_activity_at timestamptz,
+  last_activity_type text
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $sovera$
+begin
+  if p_user_ids is null or cardinality(p_user_ids) > 100 then
+    raise exception 'Provide between 1 and 100 user IDs';
+  end if;
+
+  return query
+  select
+    requested.user_id,
+    coalesce(nullif(profile.display_name, ''), 'Sovera creator')::text,
+    profile.handle,
+    profile.created_at,
+    (select count(*) from public.designs d where d.user_id = requested.user_id),
+    (select count(*) from public.designs d where d.user_id = requested.user_id and d.visibility = 'public'),
+    (select count(*) from public.design_comments c where c.user_id = requested.user_id),
+    (select count(*) from public.design_likes l where l.user_id = requested.user_id),
+    (select count(*) from public.activity_events e where e.user_id = requested.user_id),
+    (select e.created_at from public.activity_events e where e.user_id = requested.user_id order by e.created_at desc limit 1),
+    (select e.event_type from public.activity_events e where e.user_id = requested.user_id order by e.created_at desc limit 1)
+  from (select distinct unnest(p_user_ids) as user_id) requested
+  left join public.profiles profile on profile.id = requested.user_id;
+end;
+$sovera$;
+
+revoke all on function public.admin_user_summaries(uuid[]) from public, anon, authenticated;
+grant execute on function public.admin_user_summaries(uuid[]) to service_role;
 
 -- Assign administrator roles only from the Supabase SQL Editor after verifying auth.users.id.
 -- A trusted Edge Function must read admin_roles; never trust a client role flag.
