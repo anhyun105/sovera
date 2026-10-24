@@ -337,6 +337,142 @@ async function runModeration(targetType,targetId,action){
  showToast(data?.message||'Moderation action completed.');
  await loadAdminDashboard();await loadCloudGallery();await renderCloudDashboard();
 }
+function adminDate(value){
+ if(!value)return 'Not available yet';
+ const date=new Date(value);return Number.isNaN(date.getTime())?'Not available':date.toLocaleString();
+}
+function addAdminRecordLine(parent,title,description,meta=''){
+ const line=document.createElement('div');line.className='admin-record-line';
+ const heading=document.createElement('strong');heading.textContent=title;
+ line.append(heading);
+ if(description){const detail=document.createElement('div');detail.textContent=description;line.append(detail)}
+ if(meta){const small=document.createElement('small');small.textContent=meta;line.append(small)}
+ parent.append(line);return line;
+}
+function renderAdminUsers(users){
+ const list=$('#adminUsersList');list.innerHTML='';
+ if(!users.length){list.className='dash-empty';list.textContent='No accounts match this search/page.';return}
+ list.className='';
+ for(const user of users){
+  const row=document.createElement('article');row.className='admin-user-record';
+  const main=document.createElement('div');main.className='admin-user-main';
+  const name=document.createElement('strong');name.textContent=user.displayName||'Sovera creator';
+  const email=document.createElement('p');email.textContent=user.email||'No email address on this account';
+  const id=document.createElement('small');id.textContent='Account ID · '+user.id;
+  main.append(name,email,id);
+  const meta=document.createElement('div');meta.className='admin-user-meta';
+  const status=document.createElement('span');status.className='admin-status status-'+user.status;status.textContent=user.status.replaceAll('_',' ');
+  const role=document.createElement('span');role.className='admin-status';role.textContent=user.role||'member';
+  const joined=document.createElement('small');joined.textContent='Joined: '+adminDate(user.createdAt);
+  const login=document.createElement('small');login.textContent='Last sign-in: '+adminDate(user.lastSignInAt);
+  const activity=document.createElement('small');activity.textContent='Last recorded activity: '+(user.lastActivityType?user.lastActivityType.replaceAll('_',' ')+' · '+adminDate(user.lastActivityAt):'No events recorded');
+  const counts=document.createElement('small');counts.textContent='Designs '+user.designCount+' · Public '+user.publicDesignCount+' · Comments '+user.commentCount+' · Likes '+user.likeCount;
+  meta.append(status,role,joined,login,activity,counts);
+  const actions=document.createElement('div');actions.className='admin-user-actions';
+  const details=document.createElement('button');details.textContent='View record';details.addEventListener('click',()=>loadAdminUserDetail(user.id));actions.append(details);
+  if(!user.role&&user.id!==previewUser?.id){
+   const manage=document.createElement('button');manage.className=user.status==='suspended'?'':'danger';
+   manage.textContent=user.status==='suspended'?'Lift suspension':'Suspend 7 days';
+   manage.addEventListener('click',()=>changeAdminUserStatus(user));actions.append(manage);
+  }
+  row.append(main,meta,actions);list.append(row);
+ }
+}
+async function loadAdminUsers(){
+ const list=$('#adminUsersList');if(!list||!supabase||!previewUser?.isCloud)return;
+ $('#adminUsersStatus').textContent='Loading registered account records…';
+ $('#adminUsersPrev').disabled=true;$('#adminUsersNext').disabled=true;
+ const {data,error}=await supabase.functions.invoke('admin-users',{body:{action:'list',page:adminUsersPage,query:adminUsersQuery}});
+ if(error){
+  console.error('Admin user list unavailable:',error);
+  $('#adminUsersStatus').textContent='Account records unavailable. Confirm admin role, deploy admin-users, and apply the latest database migration.';
+  list.className='dash-empty';list.textContent=error.message||'This account cannot access owner-level user records.';
+  $('#adminUsersPage').textContent='Page '+adminUsersPage;
+  return;
+ }
+ adminUsersCache=data?.users||[];
+ adminUsersHasNext=Boolean(data?.hasNextPage);
+ $('#adminUsersPrev').disabled=adminUsersPage<=1;
+ $('#adminUsersNext').disabled=!adminUsersHasNext;
+ $('#adminUsersPage').textContent='Page '+adminUsersPage+(adminUsersQuery?' · search':'');
+ const suffix=data?.searchLimited?' · Search cap reached (first '+Number(data.searchedAccountCap||10000).toLocaleString()+' accounts scanned)':'';
+ $('#adminUsersStatus').textContent=adminUsersQuery
+  ? (data.totalMatches||0)+' matching accounts in scanned records'+suffix
+  : 'Showing '+adminUsersCache.length+' account records on this page.';
+ renderAdminUsers(adminUsersCache);
+}
+async function changeAdminUserStatus(user){
+ if(!user||user.role||user.id===previewUser?.id)return;
+ const suspend=user.status!=='suspended';
+ const message=suspend
+  ? 'Suspend '+(user.email||user.displayName)+' for 7 days? They will be blocked from new sign-ins until the ban expires.'
+  : 'Lift the sign-in suspension for '+(user.email||user.displayName)+'?';
+ if(!confirm(message))return;
+ const {data,error}=await supabase.functions.invoke('admin-users',{body:{action:suspend?'suspend_7d':'lift_suspension',userId:user.id}});
+ if(error){console.error('Admin account action failed:',error);showToast(error.message||'Account status could not be changed.');return}
+ showToast(data?.message||'Account status updated.');
+ await loadAdminUsers();
+ await loadAdminDashboard();
+}
+async function loadAdminUserDetail(userId){
+ const detail=$('#adminUserDetail'),content=$('#adminUserDetailContent');
+ detail.hidden=false;content.textContent='Loading account record…';
+ detail.scrollIntoView({behavior:'smooth',block:'start'});
+ const {data,error}=await supabase.functions.invoke('admin-users',{body:{action:'detail',userId}});
+ if(error){content.textContent=error.message||'Could not load this account record.';return}
+ const user=data.user||{};
+ $('#adminUserDetailTitle').textContent=user.displayName||user.email||'Creator record';
+ content.innerHTML='';
+ const summary=document.createElement('div');summary.className='admin-user-meta';
+ const status=document.createElement('span');status.className='admin-status status-'+(user.status||'unknown');status.textContent=user.status||'unknown';
+ const role=document.createElement('span');role.className='admin-status';role.textContent=user.role||'member';
+ summary.append(status,role);
+ addAdminRecordLine(summary,'Email address',user.email||'No email address');
+ addAdminRecordLine(summary,'Account ID',user.id||'');
+ addAdminRecordLine(summary,'Joined',adminDate(user.createdAt));
+ addAdminRecordLine(summary,'Email verified',user.emailConfirmedAt?adminDate(user.emailConfirmedAt):'Not verified');
+ addAdminRecordLine(summary,'Last sign-in',adminDate(user.lastSignInAt));
+ addAdminRecordLine(summary,'Account suspension',user.status==='suspended'?'Suspended until '+adminDate(user.bannedUntil):'No active ban detected');
+ content.append(summary);
+ const metrics=document.createElement('div');metrics.className='admin-detail-stats';
+ const statItems=[['Designs',user.designCount],['Published',user.publicDesignCount],['Comments',user.commentCount],['Likes',user.likeCount],['Recorded events',user.activityCount]];
+ for(const [label,value] of statItems){
+  const box=document.createElement('div');box.className='admin-detail-stat';const number=document.createElement('strong');number.textContent=String(value??0);const caption=document.createElement('span');caption.textContent=label;box.append(number,caption);metrics.append(box);
+ }
+ content.append(metrics);
+ const columns=document.createElement('div');columns.className='admin-detail-columns';
+ const designs=document.createElement('section');designs.className='admin-detail-section';const designsTitle=document.createElement('h4');designsTitle.textContent='Saved design records';designs.append(designsTitle);
+ if(!data.designs?.length)addAdminRecordLine(designs,'No saved designs','No design records were found for this account.');
+ else for(const item of data.designs)addAdminRecordLine(designs,item.title||'Untitled concept',(item.garment_type||'Design')+' · '+item.visibility, 'Updated '+adminDate(item.updated_at||item.created_at));
+ const comments=document.createElement('section');comments.className='admin-detail-section';const commentsTitle=document.createElement('h4');commentsTitle.textContent='Comment records';comments.append(commentsTitle);
+ if(!data.comments?.length)addAdminRecordLine(comments,'No comments','No comment records were found for this account.');
+ else for(const item of data.comments)addAdminRecordLine(comments,(item.moderation_status||'unknown').toUpperCase(),item.body||'', 'Submitted '+adminDate(item.created_at)+' · Content ID '+item.id);
+ columns.append(designs,comments);content.append(columns);
+ const activity=document.createElement('section');activity.className='admin-detail-section';const activityTitle=document.createElement('h4');activityTitle.textContent='Recent activity history';activity.append(activityTitle);
+ if(!data.activity?.length)addAdminRecordLine(activity,'No activity history','This account has no recorded events yet.');
+ else for(const item of data.activity){
+  const safeMeta=item.metadata&&Object.keys(item.metadata).length?JSON.stringify(item.metadata):'';
+  addAdminRecordLine(activity,(item.event_type||'event').replaceAll('_',' '),safeMeta,'Recorded '+adminDate(item.created_at)+(item.design_id?' · Design ID '+item.design_id:''));
+ }
+ content.append(activity);
+ const note=document.createElement('p');note.className='section-footnote';note.textContent=data.note||'Account details are shown only to the verified admin role.';content.append(note);
+}
+function exportAdminUsersCsv(){
+ if(!adminUsersCache.length){showToast('There are no account rows to export on this page.');return}
+ const columns=['Account ID','Email','Display name','Role','Status','Joined at','Email confirmed at','Last sign-in','Design count','Public design count','Comment count','Likes received','Activity count','Last activity type','Last activity at'];
+ const quote=value=>'"'+String(value??'').replace(/"/g,'""')+'"';
+ const rows=[columns,...adminUsersCache.map(user=>[user.id,user.email,user.displayName,user.role||'member',user.status,user.createdAt,user.emailConfirmedAt,user.lastSignInAt,user.designCount,user.publicDesignCount,user.commentCount,user.likeCount,user.activityCount,user.lastActivityType,user.lastActivityAt])];
+ const blob=new Blob(['\ufeff'+rows.map(row=>row.map(quote).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+ const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='sovera-account-records-page-'+adminUsersPage+'.csv';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+$('#adminUserSearchButton').addEventListener('click',()=>{adminUsersQuery=$('#adminUserSearch').value.trim();adminUsersPage=1;void loadAdminUsers()});
+$('#adminUserSearch').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();$('#adminUserSearchButton').click()}});
+$('#adminUserSearchClear').addEventListener('click',()=>{$('#adminUserSearch').value='';adminUsersQuery='';adminUsersPage=1;void loadAdminUsers()});
+$('#adminUsersPrev').addEventListener('click',()=>{if(adminUsersPage>1){adminUsersPage--;void loadAdminUsers()}});
+$('#adminUsersNext').addEventListener('click',()=>{if(adminUsersHasNext){adminUsersPage++;void loadAdminUsers()}});
+$('#adminUsersExport').addEventListener('click',exportAdminUsersCsv);
+$('#adminUserDetailClose').addEventListener('click',()=>{$('#adminUserDetail').hidden=true;$('#adminUserDetailContent').textContent=''});
+
 async function loadAdminDashboard(){
  const panel=$('#adminPanel');if(!panel)return;
  panel.hidden=true;
@@ -374,6 +510,7 @@ async function loadAdminDashboard(){
   const metadata=item.metadata&&Object.keys(item.metadata).length?JSON.stringify(item.metadata):'';
   events.append(buildAdminItem(item.event_type.replaceAll('_',' '),metadata,'Recorded '+new Date(item.created_at).toLocaleString(),[]));
  }
+ await loadAdminUsers();
 }
 $('#adminRefresh').addEventListener('click',()=>loadAdminDashboard());
 
