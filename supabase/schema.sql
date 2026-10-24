@@ -81,12 +81,27 @@ create table if not exists public.ai_tryon_jobs (
   finished_at timestamptz
 );
 
+create table if not exists public.content_reports (
+  id uuid primary key default gen_random_uuid(),
+  reporter_id uuid not null references auth.users(id) on delete cascade,
+  design_id uuid references public.public_designs(id) on delete cascade,
+  comment_id uuid references public.design_comments(id) on delete cascade,
+  reason text not null check (reason in ('copied_work','harassment','spam','unsafe_content','privacy','other')),
+  details text not null default '',
+  status text not null default 'open' check (status in ('open','reviewed','dismissed')),
+  created_at timestamptz not null default now(),
+  resolved_by uuid references auth.users(id) on delete set null,
+  resolved_at timestamptz,
+  constraint content_reports_one_target check ((design_id is not null) <> (comment_id is not null)),
+  constraint content_reports_details_length check (char_length(details) <= 800)
+);
+
 create table if not exists public.activity_events (
   id bigint generated always as identity primary key,
   user_id uuid references auth.users(id) on delete set null,
   event_type text not null check (event_type in (
     'sign_in','sign_out','design_created','design_updated','design_published',
-    'design_made_private','design_deleted','comment_reported','user_reported'
+    'design_made_private','design_deleted','comment_reported','user_reported','design_reported','comment_moderated'
   )),
   design_id uuid,
   metadata jsonb not null default '{}'::jsonb,
@@ -98,6 +113,8 @@ create index if not exists designs_owner_updated_idx on public.designs(user_id, 
 create index if not exists designs_visibility_created_idx on public.designs(visibility, created_at desc);
 create index if not exists public_designs_published_idx on public.public_designs(published_at desc);
 create index if not exists design_comments_design_time_idx on public.design_comments(design_id, created_at desc);
+create index if not exists content_reports_status_time_idx on public.content_reports(status, created_at desc);
+create index if not exists content_reports_reporter_time_idx on public.content_reports(reporter_id, created_at desc);
 create index if not exists ai_tryon_jobs_user_time_idx on public.ai_tryon_jobs(user_id, created_at desc);
 create index if not exists activity_events_user_time_idx on public.activity_events(user_id, created_at desc);
 create index if not exists activity_events_time_idx on public.activity_events(created_at desc);
@@ -237,11 +254,12 @@ alter table public.design_comments enable row level security;
 alter table public.admin_roles enable row level security;
 alter table public.activity_events enable row level security;
 alter table public.ai_tryon_jobs enable row level security;
+alter table public.content_reports enable row level security;
 
 -- Privileges AND row policies are required; RLS alone does not remove table grants.
 revoke all on table public.profiles, public.designs, public.public_designs,
   public.design_likes, public.design_comments, public.admin_roles,
-  public.activity_events, public.ai_tryon_jobs from anon, authenticated;
+  public.activity_events, public.ai_tryon_jobs, public.content_reports from anon, authenticated;
 
 grant select, insert, update, delete on table public.designs to authenticated;
 grant select, insert, update on table public.profiles to authenticated;
