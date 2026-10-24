@@ -88,9 +88,12 @@
 <script>window.setTimeout(()=>document.getElementById("loader")?.classList.add("hidden"),4500);</script>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
+import { connectSoveraSupabase } from './supabase-client.js';
+let supabase = null;
+try { supabase = await connectSoveraSupabase(); } catch (error) { console.error('Sovera backend configuration error:', error); }
 const $ = (s,root=document) => root.querySelector(s);
 const $$ = (s,root=document) => Array.from(root.querySelectorAll(s));
-let previewUser = null, authMode = 'signup', activeView = '3d', garmentColor = '#7a233b', garmentMaterial = 'satin', garmentKind = 'gown', spinning = false, photoUrl = null, garmentGroup = null, renderer = null, scene = null, camera = null, modelRoot = null, drag = false, lastX = 0, lastY = 0, rotY = .15, rotX = -.05, zoom = 1;
+let previewUser = null, supabaseSession = null, currentDesignId = null, activeCommentDesignId = null, authMode = 'signup', activeView = '3d', garmentColor = '#7a233b', garmentMaterial = 'satin', garmentKind = 'gown', spinning = false, photoUrl = null, garmentGroup = null, renderer = null, scene = null, camera = null, modelRoot = null, drag = false, lastX = 0, lastY = 0, rotY = .15, rotX = -.05, zoom = 1;
 const colorNames = {'#7a233b':'Burgundy','#d0a65c':'Champagne gold','#123f34':'Emerald','#202c48':'Midnight blue','#e5d8c3':'Ivory','#282522':'Charcoal','#9b6d85':'Mauve','#aa4d2f':'Terracotta'};
 const materialNames = {satin:'Liquid satin',velvet:'Royal velvet',linen:'Natural linen',organza:'Sheer organza',cotton:'Soft cotton',chiffon:'Chiffon',georgette:'Georgette',crepe:'Crepe',lace:'Embroidered lace',brocade:'Woven brocade',denim:'Denim',jersey:'Jersey knit'};
 const kindNames = {gown:'Couture gown',skirt:'Statement skirt',blouse:'Sculpted blouse',jacket:'Tailored jacket',trousers:'Wide-leg trousers',saree:'Saree silhouette'};
