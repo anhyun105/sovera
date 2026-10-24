@@ -99,9 +99,9 @@ const materialNames = {satin:'Liquid satin',velvet:'Royal velvet',linen:'Natural
 const kindNames = {gown:'Couture gown',skirt:'Statement skirt',blouse:'Sculpted blouse',jacket:'Tailored jacket',trousers:'Wide-leg trousers',saree:'Saree silhouette'};
 function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>t.classList.remove('show'),3100)}
 function openModal(id){$('#'+id).classList.add('open')}
-function closeModals(){$('.modal-backdrop').forEach(m=>m.classList.remove('open'));if((selectedPhotoFile||photoUrl||aiResultUrl)&&typeof clearPhotoState==='function')clearPhotoState()}
+function closeModals(){$$('.modal-backdrop').forEach(m=>m.classList.remove('open'));if((selectedPhotoFile||photoUrl||aiResultUrl)&&typeof clearPhotoState==='function')clearPhotoState()}
 $$('[data-close]').forEach(b=>b.addEventListener('click',closeModals));
-$$('.modal-backdrop').forEach(m=>m.addEventListener('mousedown',e=>{if(e.target===m)closeModals()}));
+$$$('.modal-backdrop').forEach(m=>m.addEventListener('mousedown',e=>{if(e.target===m)closeModals()}));
 function requireCreator(){if(!previewUser){openAuth('signup');showToast('Sign in to unlock your personal atelier.');return false}return true}
 function ensureCloudPasswordField(){
  const wrap=$('#cloudPasswordWrap');if(!wrap)return;
@@ -223,7 +223,7 @@ function renderDashboard(){
  else{
   list.className='';
   list.innerHTML=owned.map(d=>'<div class="dash-design"><div class="dash-swatch" style="background:'+escHTML(d.color||'#7a233b')+'"></div><div class="dash-design-info"><strong>'+escHTML(d.name)+'</strong><small>'+escHTML(materialNames[d.material]||d.material)+' · '+(d.visibility==='public'?'Marked public in this browser':'Private draft')+' · '+escHTML(new Date(d.createdAt).toLocaleDateString())+'</small></div><div class="dash-actions"><button data-open-design="'+escHTML(d.id)+'">Open</button><button data-delete-design="'+escHTML(d.id)+'">Delete</button></div></div>').join('');
-  $$('[data-open-design]',list).forEach(b=>b.addEventListener('click',()=>{document.querySelector('#atelier').scrollIntoView({behavior:'smooth'});const d=owned.find(x=>x.id===b.dataset.openDesign);if(!d)return;$('#garmentType').value=d.kind;garmentKind=d.kind;garmentColor=d.color;garmentMaterial=d.material;$('#neckline').value=d.neckline;$('#sleeves').value=d.sleeves;$('#embroidery').value=d.embroidery||'Gold embroidery';$('#bust').value=d.bust;$('#waist').value=d.waist;$('#length').value=d.length;$$('.color-chip').forEach(x=>x.classList.toggle('active',x.dataset.color===garmentColor));$$('.material-option').forEach(x=>x.classList.toggle('active',x.dataset.material===garmentMaterial));buildGarment();}));
+  $$('[data-open-design]',list).forEach(b=>b.addEventListener('click',()=>{document.querySelector('#atelier').scrollIntoView({behavior:'smooth'});const d=owned.find(x=>x.id===b.dataset.openDesign);if(!d)return;$('#garmentType').value=d.kind;garmentKind=d.kind;garmentColor=d.color;garmentMaterial=d.material;$('#neckline').value=d.neckline;$('#sleeves').value=d.sleeves;$('#embroidery').value=d.embroidery||'Gold embroidery';$('#bust').value=d.bust;$('#waist').value=d.waist;$('#length').value=d.length;$$('.color-chip').forEach(x=>x.classList.toggle('active',x.dataset.color===garmentColor));$$$('.material-option').forEach(x=>x.classList.toggle('active',x.dataset.material===garmentMaterial));buildGarment();}));
   $$('[data-delete-design]',list).forEach(b=>b.addEventListener('click',()=>{const all=getDesigns().filter(d=>d.id!==b.dataset.deleteDesign);localStorage.setItem('sovera-preview-designs',JSON.stringify(all));renderDashboard();showToast('Concept deleted from this browser preview.')}));
  }
  const activity=$('#dashboardActivity');
@@ -273,8 +273,8 @@ function openCloudDesign(d){
  garmentMaterial=materialNames[values.material]?values.material:'satin';
  $('#garmentType').value=garmentKind;$('#neckline').value=values.neckline||'Sweetheart';$('#sleeves').value=values.sleeves||'Sculpted';$('#embroidery').value=values.embroidery||'Gold embroidery';
  $('#bust').value=values.bust||88;$('#waist').value=values.waist||70;$('#length').value=values.length||145;
- $(' .color-chip').forEach(x=>x.classList.toggle('active',x.dataset.color===garmentColor));
- $('.material-option').forEach(x=>x.classList.toggle('active',x.dataset.material===garmentMaterial));
+ $$('.color-chip').forEach(x=>x.classList.toggle('active',x.dataset.color===garmentColor));
+ $$('.material-option').forEach(x=>x.classList.toggle('active',x.dataset.material===garmentMaterial));
  buildGarment();setView('3d');document.querySelector('#atelier').scrollIntoView({behavior:'smooth'});showToast('Cloud design loaded into the studio.')
 }
 async function makeWatermarkedPreviewBlob(){
@@ -477,7 +477,7 @@ updateReadouts()}
 function updateReadouts(){const k=kindNames[garmentKind],m=materialNames[garmentMaterial],c=colorNames[garmentColor]||'Custom';$('#statType').textContent=k;$('#statMaterial').textContent=m;$('#statColour').textContent=c;$('#statNeck').textContent=$('#neckline').value;$('#fabricReadout').textContent=m+' / '+c;$('#specType').textContent=k;$('#specFabric').textContent=m;$('#specColor').textContent=c;$('#specNeck').textContent=$('#neckline').value;$('#specSleeve').textContent=$('#sleeves').value;$('#specEmbroidery').textContent=$('#embroidery').value;$('#specTitle').textContent=k+' · 01';$('#statNeck').textContent=$('#neckline').value;$('#stageBadge').textContent=activeView.toUpperCase()+' / '+(activeView==='3d'?'Garment preview':activeView==='4d'?'Motion study':activeView==='2d'?'Technical outline':'Concept specification')}
 $('#garmentType').addEventListener('change',e=>{garmentKind=e.target.value;buildGarment()});
 $$('.color-chip').forEach(b=>b.addEventListener('click',()=>{$$('.color-chip').forEach(x=>x.classList.remove('active'));b.classList.add('active');garmentColor=b.dataset.color;buildGarment()}));
-$$('.material-option').forEach(b=>b.addEventListener('click',()=>{$$('.material-option').forEach(x=>x.classList.remove('active'));b.classList.add('active');garmentMaterial=b.dataset.material;buildGarment()}));
+$$$('.material-option').forEach(b=>b.addEventListener('click',()=>{$$$('.material-option').forEach(x=>x.classList.remove('active'));b.classList.add('active');garmentMaterial=b.dataset.material;buildGarment()}));
 ['neckline','sleeves','embroidery'].forEach(id=>$('#'+id).addEventListener('change',()=>{updateReadouts();if(id==='embroidery')buildGarment()}));
 $$('.view-tab').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
 function setView(view){activeView=view;$$('.view-tab').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('#garmentCanvas').style.display=view==='3d'||view==='4d'?'block':'none';$('#stage').classList.toggle('tech-active',view==='1d'||view==='2d');['1d','2d','4d'].forEach(v=>$('#panel'+v).classList.toggle('active',v===view));$('#stageBadge').textContent=view.toUpperCase()+' / '+(view==='3d'?'Garment preview':view==='4d'?'Motion study':view==='2d'?'Technical outline':'Concept specification');if(view==='4d')spinning=true;if(view==='1d'||view==='2d')spinning=false;if(view==='3d'){} }
