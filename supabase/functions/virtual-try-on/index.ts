@@ -127,12 +127,6 @@ Deno.serve(async (req) => {
     const dataUrl = "data:" + mime + ";base64," + encodeBase64(imageBytes);
     const garmentText = safeGarmentText(body.garmentDescription);
 
-    const identifierBytes = new TextEncoder().encode(user.id);
-    const digest = await crypto.subtle.digest("SHA-256", identifierBytes);
-    const safetyIdentifier = Array.from(new Uint8Array(digest))
-      .map((value) => value.toString(16).padStart(2, "0"))
-      .join("");
-
     const prompt = [
       "Edit the supplied full-body person photo to show the described fashion garment being worn.",
       "Preserve the same person's identity, face, skin tone, body proportions, pose, hair, expression, camera angle and background.",
@@ -149,14 +143,13 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-image-1.5",
+        model: "gpt-image-2.5-flare",
         images: [{ image_url: dataUrl }],
         prompt,
         size: "1024x1536",
         quality: "medium",
         output_format: "webp",
         n: 1,
-        user: safetyIdentifier
       })
     });
 
