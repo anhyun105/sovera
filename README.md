@@ -13,7 +13,7 @@ Sovera is a black-and-gold couture-inspired fashion atelier prototype with an in
 - Illustrative 1D tech pack and measurement sheet; category-aware 2D outline; 4D-style turntable animation.
 - Guest view-only mode; temporary preview profiles; browser-local saved drafts and personal dashboard.
 - Explore inspiration gallery, local like/comment preview controls and local photo overlay.
-- When configured, frontend paths are prepared for Supabase Auth, private cloud designs, a signed-preview public gallery, shared likes/comments, moderation, admin analytics, account deletion and consent-gated AI outfit editing.
+- When configured, frontend paths are prepared for Supabase Auth, private cloud designs, a signed-preview public gallery, shared likes/comments, moderation, account records, per-user activity history, admin analytics and account controls, account deletion and consent-gated AI outfit editing.
 
 ## Important distinction
 
